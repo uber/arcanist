@@ -10,7 +10,7 @@ abstract class ArcanistUnitTestEngine {
   private $arguments = array();
   protected $diffID;
   private $enableAsyncTests;
-  private $enableCoverage;
+  private $enableCoverage = false;
   private $runAllTests;
   protected $renderer;
 
@@ -87,7 +87,9 @@ abstract class ArcanistUnitTestEngine {
   }
 
   final public function setEnableCoverage($enable_coverage) {
-    $this->enableCoverage = $enable_coverage;
+    if (gettype($enable_coverage) === "boolean") {
+      $this->enableCoverage = $enable_coverage;
+    }
     return $this;
   }
 
