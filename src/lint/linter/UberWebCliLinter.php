@@ -17,7 +17,7 @@ final class UberWebCliLinter extends ArcanistExternalLinter {
   }
 
   public function getInfoDescription() {
-    return pht('Use `uber-standard` to detect issues with JavaScript source files.');
+    return pht('Use `web-cli lint` to detect issues with JavaScript source files.');
   }
 
   public function getLinterName() {
@@ -51,7 +51,7 @@ final class UberWebCliLinter extends ArcanistExternalLinter {
   }
 
   public function getInstallInstructions() {
-    return pht('Install web-cli using `npm install web-cli`.');
+    return pht('Install web-cli using `npm install @uber/web-cli`.');
   }
 
   public function shouldExpectCommandErrors() {
@@ -98,7 +98,7 @@ final class UberWebCliLinter extends ArcanistExternalLinter {
     if (!is_array($files)) {
       // Something went wrong and we can't decode the output. Exit abnormally.
       throw new ArcanistUsageException(
-        "web-cli returned unparseable output.\n".
+        "web-cli lint returned unparseable output.\n".
         "stdout:\n\n{$stdout}".
         "stderr:\n\n{$stderr}");
     }
