@@ -8,11 +8,12 @@ final class UberWebCliLinter extends ArcanistExternalLinter {
   private $eslintrc;
 
   public function getInfoName() {
-    return 'WebCli';
+    return 'UberWebCli';
   }
 
   public function getInfoURI() {
-    return 'https://github.com/uber/standard';
+    // web-cli lint delegates to standard https://github.com/standard
+    return 'https://code.uberinternal.com/diffusion/WEWEBC/';
   }
 
   public function getInfoDescription() {
