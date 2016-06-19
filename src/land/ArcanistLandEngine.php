@@ -13,6 +13,7 @@ abstract class ArcanistLandEngine extends Phobject {
   private $shouldSquash;
   private $shouldDeleteRemote;
   private $shouldPreview;
+  private $revision;
 
   // TODO: This is really grotesque.
   private $buildMessageCallback;
@@ -44,6 +45,24 @@ abstract class ArcanistLandEngine extends Phobject {
   final public function getShouldHold() {
     return $this->shouldHold;
   }
+
+  // final public function setShouldUseSubmitQueue($should_use_submit_queue) {
+  //   $this->shouldUseSubmitQueue = $should_use_submit_queue;
+  //   return $this;
+  // }
+
+  // final public function getShouldUseSubmitQueue() {
+  //   return $this->shouldUseSubmitQueue;
+  // }
+
+  // final public function setSubmitQueueClient($submit_queue_client) {
+  //   $this->submitQueueClient = $submit_queue_client;
+  //   return $this;
+  // }
+
+  // final public function getSubmitQueueClient() {
+  //   return $this->submitQueueClient;
+  // }
 
   final public function setShouldKeep($should_keep) {
     $this->shouldKeep = $should_keep;
@@ -83,6 +102,15 @@ abstract class ArcanistLandEngine extends Phobject {
 
   final public function setTargetOnto($target_onto) {
     $this->targetOnto = $target_onto;
+    return $this;
+  }
+
+  final public function getRevision() {
+    return $this->revision;
+  }
+
+  final public function setRevision($revision) {
+    $this->revision = $revision;
     return $this;
   }
 

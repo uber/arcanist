@@ -1,16 +1,17 @@
 <?php
 
-final class ArcanistGitLandEngine
+class ArcanistGitLandEngine
   extends ArcanistLandEngine {
 
   private $localRef;
   private $localCommit;
   private $sourceCommit;
   private $mergedRef;
-  private $restoreWhenDestroyed;
+  protected $restoreWhenDestroyed;
 
   public function execute() {
-    $this->verifySourceAndTargetExist();
+    $this->verifySourceExist();
+    $this->verifyTargetExist();
     $this->fetchTarget();
 
     $this->printLandingCommits();
@@ -90,36 +91,40 @@ final class ArcanistGitLandEngine
     call_user_func($this->getBuildMessageCallback(), $this);
   }
 
-  private function verifySourceAndTargetExist() {
-    $api = $this->getRepositoryAPI();
-
-    list($err) = $api->execManualLocal(
+  protected function getRef($ref) {
+    return $this->getRepositoryAPI()->execManualLocal(
       'rev-parse --verify %s',
-      $this->getTargetFullRef());
+      $ref);
+  }
 
-    if ($err) {
-      throw new Exception(
-        pht(
-          'Branch "%s" does not exist in remote "%s".',
-          $this->getTargetOnto(),
-          $this->getTargetRemote()));
-    }
+  private function verifyRef($ref, $exception) {
+    list($err, $stdout) = $this->getRef($ref);
+    if ($err) { throw $exception; }
+    return $stdout;
+  }
 
-    list($err, $stdout) = $api->execManualLocal(
-      'rev-parse --verify %s',
-      $this->getSourceRef());
-
-    if ($err) {
-      throw new Exception(
+  protected function verifySourceExist() {
+    $stdout = $this->verifyRef(
+      $this->getSourceRef(),
+      new Exception(
         pht(
           'Branch "%s" does not exist in the local working copy.',
-          $this->getSourceRef()));
-    }
+          $this->getSourceRef())));
 
     $this->sourceCommit = trim($stdout);
   }
 
-  private function fetchTarget() {
+  protected function verifyTargetExist() {
+    $stdout = $this->verifyRef(
+      $this->getTargetFullRef(),
+      new Exception(
+        pht(
+          'Branch "%s" does not exist in remote "%s".',
+          $this->getTargetOnto(),
+          $this->getTargetRemote())));
+  }
+
+  protected function fetchTarget() {
     $api = $this->getRepositoryAPI();
 
     $ref = $this->getTargetFullRef();
@@ -206,6 +211,38 @@ final class ArcanistGitLandEngine
     $this->mergedRef = trim($stdout);
   }
 
+  // public function getTargetOnto() {
+  //   if ($this->getShouldUseSubmitQueue()) {
+  //     return 'refs/heads/SQ/'.$this->getSourceRef();
+  //   } else {
+  //     return parent::getTargetOnto();
+  //   }
+  // }
+
+    // if ($this->getShouldUseSubmitQueue()) {
+    //   $this->writeInfo(
+    //       pht('PUSHING'),
+    //       pht('Pushing changes to Submit Queue.'));
+    //   $err = $api->execPassthru(
+    //       'push -- %s %s:%s',
+    //       $this->getTargetRemote(),
+    //       $this->mergedRef,
+    //       $this->getTargetOnto());
+
+    //   if ($err) {
+    //     throw new ArcanistUsageException(
+    //         pht(
+    //             'Push failed! Fix the error and run "%s" again.',
+    //             'arc land'));
+    //   }
+    //   $client = $this->getSubmitQueueClient();
+    //   $params = array(
+    //       'remote' => $this->getTargetRemote(),
+    //       'ref' => $this->getTargetOnto(),
+    //       'revisionId' => $this->getRevision()['id'],
+    //   );
+    //   $status_url = $client->callMethodSynchronous("POST", "/merge_requests", $params);
+
   private function pushChange() {
     $api = $this->getRepositoryAPI();
 
@@ -227,7 +264,7 @@ final class ArcanistGitLandEngine
     }
   }
 
-  private function reconcileLocalState() {
+  protected function reconcileLocalState() {
     $api = $this->getRepositoryAPI();
 
     // Try to put the user into the best final state we can. This is very
@@ -468,7 +505,7 @@ final class ArcanistGitLandEngine
     return;
   }
 
-  private function destroyLocalBranch() {
+  protected function destroyLocalBranch() {
     $api = $this->getRepositoryAPI();
 
     if ($this->getSourceRef() == $this->getTargetOnto()) {
@@ -499,7 +536,7 @@ final class ArcanistGitLandEngine
   /**
    * Save the local working copy state so we can restore it later.
    */
-  private function saveLocalState() {
+  protected function saveLocalState() {
     $api = $this->getRepositoryAPI();
 
     $this->localCommit = $api->getWorkingCopyRevision();
@@ -519,7 +556,8 @@ final class ArcanistGitLandEngine
    * Restore the working copy to the state it was in before we started
    * performing writes.
    */
-  private function restoreLocalState() {
+  protected function restoreLocalState() {
+    $this->writeInfo('Restoring', 'Something failed so restoring');
     $api = $this->getRepositoryAPI();
 
     $api->execxLocal('checkout %s --', $this->localRef);
@@ -529,7 +567,7 @@ final class ArcanistGitLandEngine
     $this->restoreWhenDestroyed = false;
   }
 
-  private function getTargetFullRef() {
+  protected function getTargetFullRef() {
     return $this->getTargetRemote().'/'.$this->getTargetOnto();
   }
 

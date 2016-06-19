@@ -21,6 +21,9 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   private $branchType;
   private $ontoType;
   private $preview;
+  private $shouldUseSubmitQueue;
+  private $submitQueueUri;
+  private $submitQueueClient;
 
   private $revision;
   private $messageFile;
@@ -29,6 +32,10 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   const REFTYPE_BOOKMARK = 'bookmark';
 
   public function getRevisionDict() {
+    if (!$this->revision) {
+      $this->revision = $this->getRevision();
+    }
+
     return $this->revision;
   }
 
@@ -248,6 +255,14 @@ EOTEXT
           'actually modify or land the commits.'),
       ),
       '*' => 'branch',
+      'tbr' => array(
+        'help' => pht(
+          'Skips the submit-queue if the submit-queue '.
+          'is enabled for this repo.'),
+        'supports' => array(
+          'git',
+        ),
+      ),
     );
   }
 
@@ -256,7 +271,13 @@ EOTEXT
 
     $engine = null;
     if ($this->isGit && !$this->isGitSvn) {
-      $engine = new ArcanistGitLandEngine();
+      if ($this->shouldUseSubmitQueue) {
+        $engine = new ArcanistSubmitQueueEngine(
+          $this->submitQueueClient,
+          $this->getConduit());
+      } else {
+        $engine = new ArcanistGitLandEngine();
+      }
     }
 
     if ($engine) {
@@ -291,7 +312,8 @@ EOTEXT
         ->setShouldKeep($this->keepBranch)
         ->setShouldSquash($this->useSquash)
         ->setShouldPreview($this->preview)
-        ->setBuildMessageCallback(array($this, 'buildEngineMessage'));
+        ->setBuildMessageCallback(array($this, 'buildEngineMessage'))
+        ->setRevision($this->getRevisionDict());
 
       $engine->execute();
 
@@ -562,7 +584,32 @@ EOTEXT
     }
 
     $this->oldBranch = $this->getBranchOrBookmark();
+    $this->shouldUseSubmitQueue = nonempty(
+        $this->getConfigFromAnySource('uber.land.submitqueue.enable'),
+        false
+    );
+    if ($this->shouldUseSubmitQueue) {
+      $this->submitQueueUri = $this->getConfigFromAnySource('uber.land.submitqueue.uri');
+      if(empty($this->submitQueueUri)) {
+        $message = pht(
+            "You are trying to use submitqueue, but the submitqueue URI for your repo is not set");
+        throw new ArcanistUsageException($message);
+      }
+      $this->submitQueueClient = new SubmitQueueClient($this->submitQueueUri);
+    }
   }
+
+  // private function writeArguments() {
+  //   $revision = $this->getRevisionDict();
+  //   $this->writeInfo(pht('branch'), pht("%s", $this->branch));
+  //   $this->writeInfo(pht('branchType'), pht("%s", $this->branchType));
+  //   $this->writeInfo(pht('onto'), pht("%s", $this->onto));
+  //   $this->writeInfo(pht('remote'), pht("%s", $this->remote));
+  //   // $this->writeInfo(pht('should_hold'), pht("%s", $this->should_hold));
+  //   $this->writeInfo(pht('should_use_submit_queue'), pht("%s", $this->shouldUseSubmitQueue));
+  //   $this->writeInfo(pht('submitQueueUri'), pht("%s", $this->submitQueueUri));
+  //   $this->writeInfo(pht('revision_id'), pht("%s", $revision['id']));
+  // }
 
   private function validate() {
     $repository_api = $this->getRepositoryAPI();
@@ -682,7 +729,8 @@ EOTEXT
     echo pht("The following commit(s) will be landed:\n\n%s", $out), "\n";
   }
 
-  private function findRevision() {
+  public function getRevision() {
+    
     $repository_api = $this->getRepositoryAPI();
 
     $this->parseBaseCommitArgument(array($this->ontoRemoteBranch));
@@ -749,8 +797,12 @@ EOTEXT
       throw new ArcanistUsageException($message);
     }
 
-    $this->revision = head($revisions);
+    return head($revisions);
+  }
 
+  private function checkRevision() {
+    
+    $this->revision = $this->getRevisionDict();
     $rev_status = $this->revision['status'];
     $rev_id = $this->revision['id'];
     $rev_title = $this->revision['title'];
@@ -1601,7 +1653,7 @@ EOTEXT
 
   public function buildEngineMessage(ArcanistLandEngine $engine) {
     // TODO: This is oh-so-gross.
-    $this->findRevision();
+    $this->checkRevision();
     $engine->setCommitMessageFile($this->messageFile);
   }
 
@@ -1612,16 +1664,20 @@ EOTEXT
   }
 
   public function didPush() {
-    $this->askForRepositoryUpdate();
+    if ($this->shouldUseSubmitQueue) {
+      // do nothing
+    } else {
+      $this->askForRepositoryUpdate();
 
-    $mark_workflow = $this->buildChildWorkflow(
-      'close-revision',
-      array(
-        '--finalize',
-        '--quiet',
-        $this->revision['id'],
-      ));
-    $mark_workflow->run();
+      $mark_workflow = $this->buildChildWorkflow(
+        'close-revision',
+        array(
+          '--finalize',
+          '--quiet',
+          $this->revision['id'],
+        ));
+      $mark_workflow->run();
+    }
   }
 
 }
