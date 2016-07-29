@@ -10,8 +10,7 @@ class ArcanistGitLandEngine
   protected $restoreWhenDestroyed;
 
   public function execute() {
-    $this->verifySourceExist();
-    $this->verifyTargetExist();
+    $this->verifySourceAndTargetExist();
     $this->fetchTarget();
 
     $this->printLandingCommits();
@@ -91,37 +90,33 @@ class ArcanistGitLandEngine
     call_user_func($this->getBuildMessageCallback(), $this);
   }
 
-  protected function getRef($ref) {
-    return $this->getRepositoryAPI()->execManualLocal(
+  protected function verifySourceAndTargetExist() {
+    $api = $this->getRepositoryAPI();
+
+    list($err) = $api->execManualLocal(
       'rev-parse --verify %s',
-      $ref);
-  }
+      $this->getTargetFullRef());
 
-  private function verifyRef($ref, $exception) {
-    list($err, $stdout) = $this->getRef($ref);
-    if ($err) { throw $exception; }
-    return $stdout;
-  }
-
-  protected function verifySourceExist() {
-    $stdout = $this->verifyRef(
-      $this->getSourceRef(),
-      new Exception(
-        pht(
-          'Branch "%s" does not exist in the local working copy.',
-          $this->getSourceRef())));
-
-    $this->sourceCommit = trim($stdout);
-  }
-
-  protected function verifyTargetExist() {
-    $stdout = $this->verifyRef(
-      $this->getTargetFullRef(),
-      new Exception(
+    if ($err) {
+      throw new Exception(
         pht(
           'Branch "%s" does not exist in remote "%s".',
           $this->getTargetOnto(),
-          $this->getTargetRemote())));
+          $this->getTargetRemote()));
+    }
+
+    list($err, $stdout) = $api->execManualLocal(
+      'rev-parse --verify %s',
+      $this->getSourceRef());
+
+    if ($err) {
+      throw new Exception(
+        pht(
+          'Branch "%s" does not exist in the local working copy.',
+          $this->getSourceRef()));
+    }
+
+    $this->sourceCommit = trim($stdout);
   }
 
   protected function fetchTarget() {
@@ -210,38 +205,6 @@ class ArcanistGitLandEngine
       'HEAD');
     $this->mergedRef = trim($stdout);
   }
-
-  // public function getTargetOnto() {
-  //   if ($this->getShouldUseSubmitQueue()) {
-  //     return 'refs/heads/SQ/'.$this->getSourceRef();
-  //   } else {
-  //     return parent::getTargetOnto();
-  //   }
-  // }
-
-    // if ($this->getShouldUseSubmitQueue()) {
-    //   $this->writeInfo(
-    //       pht('PUSHING'),
-    //       pht('Pushing changes to Submit Queue.'));
-    //   $err = $api->execPassthru(
-    //       'push -- %s %s:%s',
-    //       $this->getTargetRemote(),
-    //       $this->mergedRef,
-    //       $this->getTargetOnto());
-
-    //   if ($err) {
-    //     throw new ArcanistUsageException(
-    //         pht(
-    //             'Push failed! Fix the error and run "%s" again.',
-    //             'arc land'));
-    //   }
-    //   $client = $this->getSubmitQueueClient();
-    //   $params = array(
-    //       'remote' => $this->getTargetRemote(),
-    //       'ref' => $this->getTargetOnto(),
-    //       'revisionId' => $this->getRevision()['id'],
-    //   );
-    //   $status_url = $client->callMethodSynchronous("POST", "/merge_requests", $params);
 
   private function pushChange() {
     $api = $this->getRepositoryAPI();

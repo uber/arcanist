@@ -4,8 +4,7 @@ final class ArcanistSubmitQueueEngine
     extends ArcanistGitLandEngine
 {
   public function execute() {
-    $this->verifySourceExist();
-    $this->verifyTargetExist();
+    $this->verifySourceAndTargetExist();
     $this->fetchTarget();
 
     $this->printLandingCommits();
@@ -66,9 +65,9 @@ final class ArcanistSubmitQueueEngine
     $this->writeInfo(
       pht('Successfully submitted the request to the Submit Queue.'),
       pht('Please use "%s" to track your changes', $statusUrl));
-    // $this->writeInfo(
-    //   pht('If the Submit Queue request fails,'),
-    //   pht('please do arc restore "%s" to restore your branch', 'whatever'));
+     $this->writeInfo(
+       pht('If the Submit Queue request fails,'),
+       pht('please do arc restore "%s" to restore your branch', 'whatever'));
   }
 
   public function __construct($submitQueueClient, $conduit) {
