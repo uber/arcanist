@@ -520,7 +520,6 @@ class ArcanistGitLandEngine
    * performing writes.
    */
   protected function restoreLocalState() {
-    $this->writeInfo('Restoring', 'Something failed so restoring');
     $api = $this->getRepositoryAPI();
 
     $api->execxLocal('checkout %s --', $this->localRef);
