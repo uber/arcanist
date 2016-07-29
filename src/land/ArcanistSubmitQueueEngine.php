@@ -50,11 +50,17 @@ final class ArcanistSubmitQueueEngine
     $this->writeInfo(
       pht('PUSHING'),
       pht('Pushing changes to Submit Queue.'));
+    $api = $this->getRepositoryAPI();
+    list($out) = $api->execxLocal(
+      'config --get remote.%s.url',
+      $this->getTargetRemote());
+
+    $remoteUrl = trim($out);
     // Get the latest revision as we could have updated the diff
     // as a result of arc diff
     $revision = $this->getRevision();
     $statusUrl = $this->submitQueueClient->submitMergeRequest(
-      $this->getTargetRemote(),
+      $remoteUrl,
       $revision['diffs'][0],
       $revision['id']);
     $this->writeInfo(

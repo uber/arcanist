@@ -16,9 +16,13 @@ final class SubmitQueueClient extends Phobject {
         $this->timeout = $timeout;
     }
 
-    public function submitMergeRequest($remote, $diffId, $revisionId) {
+    public function getHost() {
+        return $this->host;
+    }
+
+    public function submitMergeRequest($remoteUrl, $diffId, $revisionId) {
         $params = array(
-          'remote' => $remote,
+          'remote' => $remoteUrl,
           'diffId' => $diffId,
           'revisionId' => $revisionId,
         );
@@ -35,7 +39,7 @@ final class SubmitQueueClient extends Phobject {
         // Always use the cURL-based HTTPSFuture, for proxy support and other
         // protocol edge cases that HTTPFuture does not support.
         $core_future = new HTTPSFuture($req);
-        $core_future->addHeader('Host', "http://localhost:8080/");
+        $core_future->addHeader('Host', $this->getHost());
 
         $core_future->setMethod($method);
         $core_future->setTimeout($this->timeout);
