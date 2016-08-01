@@ -24,6 +24,7 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   private $shouldUseSubmitQueue;
   private $submitQueueUri;
   private $submitQueueClient;
+  private $tbr;
 
   private $revision;
   private $messageFile;
@@ -271,7 +272,7 @@ EOTEXT
 
     $engine = null;
     if ($this->isGit && !$this->isGitSvn) {
-      if ($this->shouldUseSubmitQueue) {
+      if ($this->shouldUseSubmitQueue && !$this->tbr) {
         $engine = new ArcanistSubmitQueueEngine(
           $this->submitQueueClient,
           $this->getConduit());
@@ -588,6 +589,12 @@ EOTEXT
         $this->getConfigFromAnySource('uber.land.submitqueue.enable'),
         false
     );
+
+    if ($this->getArgument('tbr')) {
+      $this->tbr = true;
+    } else {
+      $this->tbr = false;
+    }
     if ($this->shouldUseSubmitQueue) {
       $this->submitQueueUri = $this->getConfigFromAnySource('uber.land.submitqueue.uri');
       if(empty($this->submitQueueUri)) {
@@ -598,18 +605,6 @@ EOTEXT
       $this->submitQueueClient = new SubmitQueueClient($this->submitQueueUri);
     }
   }
-
-  // private function writeArguments() {
-  //   $revision = $this->getRevisionDict();
-  //   $this->writeInfo(pht('branch'), pht("%s", $this->branch));
-  //   $this->writeInfo(pht('branchType'), pht("%s", $this->branchType));
-  //   $this->writeInfo(pht('onto'), pht("%s", $this->onto));
-  //   $this->writeInfo(pht('remote'), pht("%s", $this->remote));
-  //   // $this->writeInfo(pht('should_hold'), pht("%s", $this->should_hold));
-  //   $this->writeInfo(pht('should_use_submit_queue'), pht("%s", $this->shouldUseSubmitQueue));
-  //   $this->writeInfo(pht('submitQueueUri'), pht("%s", $this->submitQueueUri));
-  //   $this->writeInfo(pht('revision_id'), pht("%s", $revision['id']));
-  // }
 
   private function validate() {
     $repository_api = $this->getRepositoryAPI();

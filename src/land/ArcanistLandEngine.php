@@ -46,24 +46,6 @@ abstract class ArcanistLandEngine extends Phobject {
     return $this->shouldHold;
   }
 
-  // final public function setShouldUseSubmitQueue($should_use_submit_queue) {
-  //   $this->shouldUseSubmitQueue = $should_use_submit_queue;
-  //   return $this;
-  // }
-
-  // final public function getShouldUseSubmitQueue() {
-  //   return $this->shouldUseSubmitQueue;
-  // }
-
-  // final public function setSubmitQueueClient($submit_queue_client) {
-  //   $this->submitQueueClient = $submit_queue_client;
-  //   return $this;
-  // }
-
-  // final public function getSubmitQueueClient() {
-  //   return $this->submitQueueClient;
-  // }
-
   final public function setShouldKeep($should_keep) {
     $this->shouldKeep = $should_keep;
     return $this;
