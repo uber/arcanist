@@ -258,7 +258,7 @@ EOTEXT
       '*' => 'branch',
       'tbr' => array(
         'help' => pht(
-          'Skips the submit-queue if the submit-queue '.
+          'tbr: To-Be-Reviewed. Skips the submit-queue if the submit-queue '.
           'is enabled for this repo.'),
         'supports' => array(
           'git',
