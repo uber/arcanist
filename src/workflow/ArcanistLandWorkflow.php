@@ -1663,19 +1663,18 @@ EOTEXT
 
   public function didPush() {
     if ($this->shouldUseSubmitQueue) {
-      // do nothing
-    } else {
-      $this->askForRepositoryUpdate();
-
-      $mark_workflow = $this->buildChildWorkflow(
-        'close-revision',
-        array(
-          '--finalize',
-          '--quiet',
-          $this->revision['id'],
-        ));
-      $mark_workflow->run();
+      return;
     }
+    $this->askForRepositoryUpdate();
+
+    $mark_workflow = $this->buildChildWorkflow(
+      'close-revision',
+      array(
+        '--finalize',
+        '--quiet',
+        $this->revision['id'],
+      ));
+    $mark_workflow->run();
   }
 
 }
