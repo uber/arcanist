@@ -1,6 +1,6 @@
 <?php
 
-final class ArcanistSubmitQueueEngine
+final class UberArcanistSubmitQueueEngine
     extends ArcanistGitLandEngine
 {
   private $revision;

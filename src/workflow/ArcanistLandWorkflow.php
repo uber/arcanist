@@ -273,7 +273,7 @@ EOTEXT
     $engine = null;
     if ($this->isGit && !$this->isGitSvn) {
       if ($this->shouldUseSubmitQueue && !$this->tbr) {
-        $engine = new ArcanistSubmitQueueEngine(
+        $engine = new UberArcanistSubmitQueueEngine(
           $this->submitQueueClient,
           $this->getConduit());
       } else {
@@ -315,7 +315,7 @@ EOTEXT
         ->setShouldPreview($this->preview)
         ->setBuildMessageCallback(array($this, 'buildEngineMessage'));
 
-      if ($engine instanceof ArcanistSubmitQueueEngine) {
+      if ($engine instanceof UberArcanistSubmitQueueEngine) {
         $engine->setRevision($this->getRevisionDict());
       }
 
