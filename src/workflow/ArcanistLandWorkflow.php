@@ -313,8 +313,11 @@ EOTEXT
         ->setShouldKeep($this->keepBranch)
         ->setShouldSquash($this->useSquash)
         ->setShouldPreview($this->preview)
-        ->setBuildMessageCallback(array($this, 'buildEngineMessage'))
-        ->setRevision($this->getRevisionDict());
+        ->setBuildMessageCallback(array($this, 'buildEngineMessage'));
+
+      if ($engine instanceof ArcanistSubmitQueueEngine) {
+        $engine->setRevision($this->getRevisionDict());
+      }
 
       $engine->execute();
 

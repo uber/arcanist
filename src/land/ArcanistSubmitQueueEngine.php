@@ -3,6 +3,8 @@
 final class ArcanistSubmitQueueEngine
     extends ArcanistGitLandEngine
 {
+  private $revision;
+
   public function execute() {
     $this->verifySourceAndTargetExist();
     $this->fetchTarget();
@@ -94,6 +96,15 @@ final class ArcanistSubmitQueueEngine
           $this->getTargetFullRef(),
           $this->getSourceRef()));
     }
+  }
+
+  final public function getRevision() {
+    return $this->revision;
+  }
+
+  final public function setRevision($revision) {
+    $this->revision = $revision;
+    return $this;
   }
 
   private function updateRevision() {

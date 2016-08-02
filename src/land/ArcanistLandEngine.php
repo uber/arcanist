@@ -13,7 +13,6 @@ abstract class ArcanistLandEngine extends Phobject {
   private $shouldSquash;
   private $shouldDeleteRemote;
   private $shouldPreview;
-  private $revision;
 
   // TODO: This is really grotesque.
   private $buildMessageCallback;
@@ -84,15 +83,6 @@ abstract class ArcanistLandEngine extends Phobject {
 
   final public function setTargetOnto($target_onto) {
     $this->targetOnto = $target_onto;
-    return $this;
-  }
-
-  final public function getRevision() {
-    return $this->revision;
-  }
-
-  final public function setRevision($revision) {
-    $this->revision = $revision;
     return $this;
   }
 
