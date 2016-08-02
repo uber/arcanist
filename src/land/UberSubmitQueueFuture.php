@@ -1,6 +1,6 @@
 <?php
 
-final class SubmitQueueFuture extends FutureProxy {
+final class UberSubmitQueueFuture extends FutureProxy {
 	protected function didReceiveResult($result) {
 		list($status, $body, $headers) = $result;
 		if ($status->isError()) {

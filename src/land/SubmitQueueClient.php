@@ -44,7 +44,7 @@ final class SubmitQueueClient extends Phobject {
         $core_future->setMethod($method);
         $core_future->setTimeout($this->timeout);
 
-        $json_future = new SubmitQueueFuture($core_future);
+        $json_future = new UberSubmitQueueFuture($core_future);
         $json_future->isReady();
 
         return $json_future;
