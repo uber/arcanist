@@ -272,12 +272,11 @@ EOTEXT
 
     $engine = null;
     if ($this->isGit && !$this->isGitSvn) {
+      $engine = new ArcanistGitLandEngine();
       if ($this->shouldUseSubmitQueue && !$this->tbr) {
         $engine = new UberArcanistSubmitQueueEngine(
           $this->submitQueueClient,
           $this->getConduit());
-      } else {
-        $engine = new ArcanistGitLandEngine();
       }
     }
 
