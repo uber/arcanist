@@ -33,10 +33,6 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   const REFTYPE_BOOKMARK = 'bookmark';
 
   public function getRevisionDict() {
-    if (!$this->revision) {
-      $this->revision = $this->getRevision();
-    }
-
     return $this->revision;
   }
 
@@ -315,7 +311,7 @@ EOTEXT
         ->setBuildMessageCallback(array($this, 'buildEngineMessage'));
 
       if ($engine instanceof UberArcanistSubmitQueueEngine) {
-        $engine->setRevision($this->getRevisionDict());
+        $engine->setRevision($this->uberGetRevision());
       }
 
       $engine->execute();
@@ -726,8 +722,11 @@ EOTEXT
     echo pht("The following commit(s) will be landed:\n\n%s", $out), "\n";
   }
 
-  public function getRevision() {
-    
+
+  // copy of the first part of the findRevision()
+  // reason it has been copied as a separate function is that this way it
+  // is easier to maintain with the upstream changes
+  private function uberGetRevision() {
     $repository_api = $this->getRepositoryAPI();
 
     $this->parseBaseCommitArgument(array($this->ontoRemoteBranch));
@@ -797,9 +796,75 @@ EOTEXT
     return head($revisions);
   }
 
-  private function checkRevision() {
-    
-    $this->revision = $this->getRevisionDict();
+  private function findRevision() {
+    $repository_api = $this->getRepositoryAPI();
+
+    $this->parseBaseCommitArgument(array($this->ontoRemoteBranch));
+
+    $revision_id = $this->getArgument('revision');
+    if ($revision_id) {
+      $revision_id = $this->normalizeRevisionID($revision_id);
+      $revisions = $this->getConduit()->callMethodSynchronous(
+        'differential.query',
+        array(
+          'ids' => array($revision_id),
+        ));
+      if (!$revisions) {
+        throw new ArcanistUsageException(pht(
+          "No such revision '%s'!",
+          "D{$revision_id}"));
+      }
+    } else {
+      $revisions = $repository_api->loadWorkingCopyDifferentialRevisions(
+        $this->getConduit(),
+        array());
+    }
+
+    if (!count($revisions)) {
+      throw new ArcanistUsageException(pht(
+        "arc can not identify which revision exists on %s '%s'. Update the ".
+        "revision with recent changes to synchronize the %s name and hashes, ".
+        "or use '%s' to amend the commit message at HEAD, or use ".
+        "'%s' to select a revision explicitly.",
+        $this->branchType,
+        $this->branch,
+        $this->branchType,
+        'arc amend',
+        '--revision <id>'));
+    } else if (count($revisions) > 1) {
+      switch ($this->branchType) {
+        case self::REFTYPE_BOOKMARK:
+          $message = pht(
+            "There are multiple revisions on feature bookmark '%s' which are ".
+            "not present on '%s':\n\n".
+            "%s\n".
+            'Separate these revisions onto different bookmarks, or use '.
+            '--revision <id> to use the commit message from <id> '.
+            'and land them all.',
+            $this->branch,
+            $this->onto,
+            $this->renderRevisionList($revisions));
+          break;
+        case self::REFTYPE_BRANCH:
+        default:
+          $message = pht(
+            "There are multiple revisions on feature branch '%s' which are ".
+            "not present on '%s':\n\n".
+            "%s\n".
+            'Separate these revisions onto different branches, or use '.
+            '--revision <id> to use the commit message from <id> '.
+            'and land them all.',
+            $this->branch,
+            $this->onto,
+            $this->renderRevisionList($revisions));
+          break;
+      }
+
+      throw new ArcanistUsageException($message);
+    }
+
+    $this->revision = head($revisions);
+
     $rev_status = $this->revision['status'];
     $rev_id = $this->revision['id'];
     $rev_title = $this->revision['title'];
@@ -1650,7 +1715,7 @@ EOTEXT
 
   public function buildEngineMessage(ArcanistLandEngine $engine) {
     // TODO: This is oh-so-gross.
-    $this->checkRevision();
+    $this->findRevision();
     $engine->setCommitMessageFile($this->messageFile);
   }
 
