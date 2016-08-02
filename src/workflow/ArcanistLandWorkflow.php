@@ -605,7 +605,7 @@ EOTEXT
             "You are trying to use submitqueue, but the submitqueue URI for your repo is not set");
         throw new ArcanistUsageException($message);
       }
-      $this->submitQueueClient = new SubmitQueueClient($this->submitQueueUri);
+      $this->submitQueueClient = new UberSubmitQueueClient($this->submitQueueUri);
     }
   }
 

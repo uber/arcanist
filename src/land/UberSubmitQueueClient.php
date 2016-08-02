@@ -1,6 +1,6 @@
 <?php
 
-final class SubmitQueueClient extends Phobject {
+final class UberSubmitQueueClient extends Phobject {
 
     private $uri;
     private $host;
