@@ -726,7 +726,7 @@ EOTEXT
   // copy of the first part of the findRevision()
   // reason it has been copied as a separate function is that this way it
   // is easier to maintain with the upstream changes
-  private function uberGetRevision() {
+  public function uberGetRevision() {
     $repository_api = $this->getRepositoryAPI();
 
     $this->parseBaseCommitArgument(array($this->ontoRemoteBranch));

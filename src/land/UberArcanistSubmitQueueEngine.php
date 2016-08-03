@@ -122,16 +122,12 @@ final class UberArcanistSubmitQueueEngine
     if ($local_diff !== $reviewed_diff) {
       $diffWorkflow = $this->getWorkflow()->buildChildWorkflow('diff', array());
       $err = $diffWorkflow->run();
-      if (!$err) {
+      if ($err) {
+        $this->writeInfo("ARC_DIFF_ERROR", "arc diff failed with error.code=", $err);
         throw new ArcanistUserAbortException();
       }
-      $this->setRevision($this->getWorkflow()->getRevision());
+      $this->setRevision($this->getWorkflow()->uberGetRevision());
     }
-      // $this->writeInfo(
-      //   pht('REVISION'),
-      //   pht('REVISION_ID=%d DIFF_ID=%d is up to date with the changes',
-      //     $this->getRevision()['id'], 
-      //     head($this->getRevision()['diffs'])));
   }
 
   private function normalizeDiff($text) {
