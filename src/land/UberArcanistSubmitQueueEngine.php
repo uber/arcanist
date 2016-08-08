@@ -4,6 +4,7 @@ final class UberArcanistSubmitQueueEngine
     extends ArcanistGitLandEngine
 {
   private $revision;
+  private $shouldShadow;
 
   public function execute() {
     $this->verifySourceAndTargetExist();
@@ -25,15 +26,20 @@ final class UberArcanistSubmitQueueEngine
       $this->updateRevision();
 
       $this->pushChange();
-      $this->reconcileLocalState();
-
-      if ($this->getShouldKeep()) {
-        echo tsprintf(
-        "%s\n",
-        pht('Keeping local branch.'));
+      if ($this->shouldShadow) {
+        // do nothing
       } else {
-        $this->checkoutTarget();
-        $this->destroyLocalBranch();
+        // cleanup the local state
+        $this->reconcileLocalState();
+
+        if ($this->getShouldKeep()) {
+          echo tsprintf(
+            "%s\n",
+            pht('Keeping local branch.'));
+        } else {
+          $this->checkoutTarget();
+          $this->destroyLocalBranch();
+        }
       }
       $this->restoreWhenDestroyed = false;
     }  catch (Exception $ex) {
@@ -100,6 +106,11 @@ final class UberArcanistSubmitQueueEngine
 
   final public function getRevision() {
     return $this->revision;
+  }
+
+  final public function setShouldShadow($shouldShadow) {
+    $this->shouldShadow = $shouldShadow;
+    return $this;
   }
 
   final public function setRevision($revision) {
