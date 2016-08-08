@@ -69,7 +69,8 @@ final class UberArcanistSubmitQueueEngine
     $statusUrl = $this->submitQueueClient->submitMergeRequest(
       $remoteUrl,
       $revision['diffs'][0],
-      $revision['id']);
+      $revision['id'],
+      $this->shouldShadow);
     $this->writeInfo(
       pht('Successfully submitted the request to the Submit Queue.'),
       pht('Please use "%s" to track your changes', $statusUrl));

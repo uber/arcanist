@@ -20,14 +20,16 @@ final class UberSubmitQueueClient extends Phobject {
         return $this->host;
     }
 
-    public function submitMergeRequest($remoteUrl, $diffId, $revisionId) {
+    public function submitMergeRequest($remoteUrl, $diffId, $revisionId, $shouldShadow) {
         $params = array(
           'remote' => $remoteUrl,
           'diffId' => $diffId,
           'revisionId' => $revisionId,
         );
-        $result = $this->callMethodSynchronous("POST", "/merge_requests", $params);
-        return "whatever";
+        if ($shouldShadow) {
+          $params['shouldShadow'] = true;
+        }
+        return $this->callMethodSynchronous("POST", "/merge_requests", $params);
     }
 
     private function callMethodSynchronous($method, $api, array $params) {
