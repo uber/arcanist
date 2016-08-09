@@ -27,7 +27,7 @@ final class UberSubmitQueueClient extends Phobject {
           'revisionId' => $revisionId,
         );
         if ($shouldShadow) {
-          $params['shouldShadow'] = true;
+          $params['shouldShadow'] = "true";
         }
         return $this->callMethodSynchronous("POST", "/merge_requests", $params);
     }
