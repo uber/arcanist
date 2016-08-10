@@ -4,17 +4,17 @@ final class UberSubmitQueueClient extends Phobject {
 
     private $uri;
     private $host;
-    private $conduit_token;
+    private $conduitToken;
     private $timeout;
 
-    public function __construct($uri, $conduit_token, $timeout=10) {
+    public function __construct($uri, $conduitToken, $timeout=10) {
         $this->uri = new PhutilURI($uri);
         if (!strlen($this->uri->getDomain())) {
             throw new Exception(
                 pht("SubmitQueue URI '%s' must include a valid host.", $uri));
         }
         $this->host = $this->uri->getDomain();
-        $this->conduit_token = $conduit_token;
+        $this->conduitToken = $conduitToken;
         $this->timeout = $timeout;
     }
 
@@ -27,7 +27,7 @@ final class UberSubmitQueueClient extends Phobject {
           'remote' => $remoteUrl,
           'diffId' => $diffId,
           'revisionId' => $revisionId,
-          'conduitToken' => $this->conduit_token,
+          'conduitToken' => $this->conduitToken,
         );
         if ($shouldShadow) {
           $params['shouldShadow'] = "true";
