@@ -21,6 +21,7 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   private $branchType;
   private $ontoType;
   private $preview;
+  private $shouldRunUnit;
   private $shouldUseSubmitQueue;
   private $submitQueueUri;
   private $submitQueueShadowMode;
@@ -344,7 +345,9 @@ EOTEXT
 
   public function run() {
     $this->readArguments();
-    $this->uberRunUnit();
+    if ($this->shouldRunUnit) {
+      $this->uberRunUnit();
+    }
 
     $engine = null;
     $uberShadowEngine = null;
@@ -689,6 +692,10 @@ EOTEXT
     }
 
     $this->oldBranch = $this->getBranchOrBookmark();
+    $this->shouldRunUnit = nonempty(
+      $this->getConfigFromAnySource('uber.land.run.unit'),
+      false
+    );
     $this->shouldUseSubmitQueue = nonempty(
         $this->getConfigFromAnySource('uber.land.submitqueue.enable'),
         false
