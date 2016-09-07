@@ -197,10 +197,10 @@ final class ArcanistSettings extends Phobject {
       'uber.land.submitqueue.regex' => array(
         'type' => 'string',
         'help' => pht(
-          'If set, the regex will be used to figure out the set of diffs that 
-          need to go through SubmitQueue.'),
+          'If set, the regex will be used to filter the set of diffs that '.
+          'need to go through SubmitQueue during arc land.'),
         'default' => '',
-        'example' => '/apps\/iphone-helix/'
+        'example' => '/apps\/iphone/'
       ),
       'uber.land.submitqueue.enable' => array(
         'type' => 'bool',
