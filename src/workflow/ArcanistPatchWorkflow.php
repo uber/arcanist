@@ -112,7 +112,7 @@ EOTEXT
         'help' => pht(
           'Normally, a new branch (git) or bookmark (hg) is created and then '.
           'the patch is applied and committed in the new branch/bookmark. '.
-          'This flag cherry-picks the resultant commit onto the original '.
+          'This flag merges the resultant commit onto the original '.
           'branch and deletes the temporary branch.'),
         'conflicts' => array(
           'update' => true,
