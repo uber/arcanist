@@ -55,7 +55,7 @@ EOTEXT
       'uber-description' => array(
         'param' => 'uber-description',
         'help' => pht('Description for the new task.'),
-      )
+      ),
     );
   }
 
