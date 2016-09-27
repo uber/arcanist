@@ -424,22 +424,22 @@ EOTEXT
       $engine = new ArcanistGitLandEngine();
       if ($this->shouldUseSubmitQueue) {
         $revision = $this->uberGetRevision();
-        if (!$this->tbr && $this->uberShouldRunSubmitQueue($revision, $this->submitQueueRegex)) {
-          // If the shadow-mode is on, then initialize the shadowEngine
-          if ($this->submitQueueShadowMode) {
-            $uberShadowEngine = new UberArcanistSubmitQueueEngine(
-              $this->submitQueueClient,
-              $this->getConduit());
-            $uberShadowEngine = $uberShadowEngine->setRevision($revision);
-          } else {
-            $engine = new UberArcanistSubmitQueueEngine(
-              $this->submitQueueClient,
-              $this->getConduit());
-            $engine = $engine->setRevision($revision);
-          }
-
+        if ($this->uberShouldRunSubmitQueue($revision, $this->submitQueueRegex)) {
           if ($this->tbr) {
             $this->uberCreateTask($revision);
+          } else {
+            // If the shadow-mode is on, then initialize the shadowEngine
+            if ($this->submitQueueShadowMode) {
+              $uberShadowEngine = new UberArcanistSubmitQueueEngine(
+                $this->submitQueueClient,
+                $this->getConduit());
+              $uberShadowEngine = $uberShadowEngine->setRevision($revision);
+            } else {
+              $engine = new UberArcanistSubmitQueueEngine(
+                $this->submitQueueClient,
+                $this->getConduit());
+              $engine = $engine->setRevision($revision);
+            }
           }
         }
       }
