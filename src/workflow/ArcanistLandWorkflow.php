@@ -1835,7 +1835,7 @@ EOTEXT
       pht('Harbormaster URI'),
       $buildable['uri']);
 
-    if ($this->getConfigFromAnySource("uber.land.buildables-check")) {
+    if ($this->getConfigFromAnySource("uber.land.buildables-check") && !$this->tbr) {
       $console->writeOut("\n");
       throw new ArcanistUsageException(
         pht("All harbormaster buildables have not succeeded."));
