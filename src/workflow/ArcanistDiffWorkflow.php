@@ -443,6 +443,9 @@ EOTEXT
           'advice'    => pht('%s suppresses lint.', '--head'),
         ),
       ),
+      'trace-git-push' => array(
+        'help' => pht('Trace git push the changes to staging area.'),
+      ),
     );
 
     return $arguments;
@@ -2804,11 +2807,20 @@ EOTEXT
       $ref_list[] = $ref['commit'].':'.$ref['ref'];
     }
 
-    $err = phutil_passthru(
-      'git push %Ls -- %s %Ls',
-      $push_flags,
-      $staging_uri,
-      $ref_list);
+    // phutil_passthru wraps the given string with single quotes
+    // therefore, "GIT_TRACE=1" is not passed through %s in string formatting
+    if ($this->getArgument('trace-git-push'))
+      $err = phutil_passthru(
+        'GIT_TRACE=1 git push %Ls -- %s %Ls',
+        $push_flags,
+        $staging_uri,
+        $ref_list);
+    else
+      $err = phutil_passthru(
+        'git push %Ls -- %s %Ls',
+        $push_flags,
+        $staging_uri,
+        $ref_list);
 
     if ($err) {
       $this->writeWarn(
