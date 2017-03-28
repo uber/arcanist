@@ -1861,23 +1861,13 @@ EOTEXT
       'differential.mandatory_fields');
 
     if (!is_null($mandatory_fields)) {
-      if (in_array('testPlan', $mandatory_fields)) {
-        $test_plan = $message->getFieldValue('testPlan');
-        if (empty($test_plan)) {
+      foreach ($mandatory_fields as $mandatory_field){
+        $fieldName = $mandatory_field['field_name'];
+        $field = $message->getFieldValue($fieldName);
+        if (empty($field)) {
+          $fieldMessage = $mandatory_field['field_message'];
           throw new ArcanistUsageException(
-            pht(
-              'You have not specified any test plan. '.
-              'Specify test plan and retry.'));
-        }
-      }
-
-      if (in_array('revertPlan', $mandatory_fields)) {
-        $revert_plan = $message->getFieldValue('revertPlan');
-        if (empty($revert_plan)) {
-          throw new ArcanistUsageException(
-            pht(
-              'You have not specified any revert plan. '.
-              'Specify revert plan and retry.'));
+            pht($fieldMessage));
         }
       }
     }
