@@ -264,6 +264,15 @@ EOTEXT
           'git',
         ),
       ),
+      'bot' => array(
+        'help' => pht(
+          'bot: Specify that this is a bot commit which will not prompt the user'.
+          'if the revision is not accepted or if buildables are still running/failed.'.
+          'Need to set uber.land.uber_allow_bot_commits in config to enable this.'),
+        'supports' => array(
+          'git',
+        ),
+      ),
       'uber-skip-update' => array(
         'help' => pht('uber-skip-update: Skip updating working copy'),
         'supports' => array('git',),
@@ -1024,15 +1033,22 @@ EOTEXT
       }
     }
 
+    $uber_is_bot_commit = $this->getConfigFromAnySource(
+      'uber.land.allow-bot-commits',
+      false) && $this->getArgument('bot');
+
     $uber_prevent_unaccepted_changes = $this->getConfigFromAnySource(
       'uber.land.prevent-unaccepted-changes',
       false);
-    if ($uber_prevent_unaccepted_changes && $rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
+    if (!$uber_is_bot_commit &&
+      $uber_prevent_unaccepted_changes &&
+      $rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
       throw new ArcanistUsageException(
         pht("Revision '%s' has not been accepted.", "D{$rev_id}: {$rev_title}"));
     }
 
-    if ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
+    // don't prompt the user if allow bot commits is set to true
+    if (!$uber_is_bot_commit && $rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
       $ok = phutil_console_confirm(pht(
         "Revision '%s' has not been accepted. Continue anyway?",
         "D{$rev_id}: {$rev_title}"));
@@ -1123,7 +1139,9 @@ EOTEXT
       "D{$rev_id}: {$rev_title}")."\n";
 
     $diff_phid = idx($this->revision, 'activeDiffPHID');
-    if ($diff_phid) {
+
+    // don't prompt the user for buildables if allow bot commits is set to true
+    if (!$uber_is_bot_commit && $diff_phid) {
       $this->checkForBuildables($diff_phid);
     }
   }
