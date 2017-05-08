@@ -3,7 +3,7 @@
 /**
  * This linter invokes checkstyle for verifying code style standards.
  */
-class CheckstyleLinter extends ArcanistLinter {
+class UberCheckstyleLinter extends ArcanistLinter {
 
   private $script = null;
 
