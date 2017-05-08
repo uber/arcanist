@@ -165,3 +165,4 @@ class UberCheckstyleLinter extends ArcanistLinter {
     $message->setReplacementText('');
   }
 }
+
