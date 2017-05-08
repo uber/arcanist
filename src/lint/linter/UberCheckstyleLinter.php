@@ -38,8 +38,7 @@ class UberCheckstyleLinter extends ArcanistLinter {
   }
 
   public function setLinterConfigurationValue($key, $value) {
-    switch ($key) {
-      case 'checkstyle.script':
+    if (isset($key) && $key == 'checkstyle.script') {
       $this->script = $value;
       return;
     }
@@ -51,7 +50,7 @@ class UberCheckstyleLinter extends ArcanistLinter {
       $chunks = array_chunk($this->getPaths(), 500);
       $futures = id(new FutureIterator(array()));
       foreach ($chunks as $chunk) {
-        $future = new ExecFuture('%C %C', $this->script, implode(' ', $this->getPaths()));
+        $future = new ExecFuture('%C %C', $this->script, implode(' ', $chunk));
         $future->setCWD($this->getProjectRoot());
         $futures->addFuture($future);
       }
@@ -66,7 +65,6 @@ class UberCheckstyleLinter extends ArcanistLinter {
 
   private function parseCheckstyleOutput($stdout) {
     $dom = new DOMDocument();
-    $ok = @$dom->loadXML($stdout);
 
     $files = $dom->getElementsByTagName('file');
     foreach ($files as $file) {
@@ -86,8 +84,12 @@ class UberCheckstyleLinter extends ArcanistLinter {
         $line = $error->getAttribute('line');
 
         // Do not fail for errors outside changed lines
-        if (($source == "JavadocTypeCheck" || $source == "JavadocMethodCheck" || $source == "RegexpSinglelineCheck")
-         && !in_array($line, $changedLines)) {
+        $errorTypes = array(
+          'JavadocTypeCheck',
+          'JavadocMethodCheck',
+          'RegexpSinglelineCheck'
+        );
+        if (in_array($source, $errorTypes) && !in_array($line, $changedLines)) {
           continue;
         }
 
@@ -116,15 +118,13 @@ class UberCheckstyleLinter extends ArcanistLinter {
           $message->setSeverity(ArcanistLintSeverity::SEVERITY_ERROR);
           $this->addAutofixes($message, $source, $line, $path);
           break;
-          case 'warning':
-          $message->setSeverity(ArcanistLintSeverity::SEVERITY_WARNING);
-          break;
           case 'info':
           $message->setSeverity(ArcanistLintSeverity::SEVERITY_ADVICE);
           break;
           case 'ignore':
           $message->setSeverity(ArcanistLintSeverity::SEVERITY_DISABLED);
           break;
+          case 'warning':
           default:
           $message->setSeverity(ArcanistLintSeverity::SEVERITY_WARNING);
           break;
@@ -136,10 +136,11 @@ class UberCheckstyleLinter extends ArcanistLinter {
   }
 
   private function addAutofixes($message, $source, $line, $path) {
-    if (!($source == "UnusedImportsCheck"
-          || $source == "RegexpMultilineCheck")) {
+    // We only autofix these specific classes of problems
+    if (!in_array($source, ["UnusedImportsCheck", "RegexpMultilineCheck"])) {
       return;
     }
+
     $file = new SplFileObject($path);
     $origLines = '';
     if ($source == "UnusedImportsCheck") {
@@ -164,6 +165,3 @@ class UberCheckstyleLinter extends ArcanistLinter {
     $message->setReplacementText('');
   }
 }
-
-?>
-
