@@ -65,6 +65,7 @@ class UberCheckstyleLinter extends ArcanistLinter {
 
   private function parseCheckstyleOutput($stdout) {
     $dom = new DOMDocument();
+    @$dom->loadXML($stdout);
 
     $files = $dom->getElementsByTagName('file');
     foreach ($files as $file) {
