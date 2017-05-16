@@ -6,6 +6,7 @@ final class UberCustomCommandTestEngine extends ArcanistUnitTestEngine {
     $config_manager = $this->getConfigurationManager();
     $command = $config_manager->getConfigFromAnySource('unit.engine.command');
     $timeout = $config_manager->getConfigFromAnySource('unit.engine.timeout');
+    $print_output = $config_manager->getConfigFromAnySource('unit.engine.print');
 
     $future = new ExecFuture('%C', $command);
     $future->setTimeout($timeout);
@@ -14,6 +15,10 @@ final class UberCustomCommandTestEngine extends ArcanistUnitTestEngine {
 
     try {
       list($stdout, $stderr) = $future->resolvex();
+      if ($print_output) {
+        print($stderr);
+        print($stdout);
+      }
       $result->setResult(ArcanistUnitTestResult::RESULT_PASS);
     } catch(CommandException $exc) {
       $result->setResult(ArcanistUnitTestResult::RESULT_FAIL);
