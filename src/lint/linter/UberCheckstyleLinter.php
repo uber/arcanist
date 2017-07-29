@@ -164,7 +164,7 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
         continue;
       }
 
-      $changedLines = $this->getEngine()->getPathChangedLines($path);
+      $changedLines = $this->getEngine()->getPathChangedLines($arcPath);
       if ($changedLines) {
         $changedLines = array_keys($changedLines);
       } else {
