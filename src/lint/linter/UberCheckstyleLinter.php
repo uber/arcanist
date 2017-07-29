@@ -3,7 +3,7 @@
 /**
  * This linter invokes checkstyle for verifying code style standards.
  */
-class UberCheckstyleLinter2 extends ArcanistFutureLinter {
+class UberCheckstyleLinter extends ArcanistFutureLinter {
 
   private $checkstyleScript = null;
   private $checkstyleJar = null;
@@ -27,7 +27,7 @@ class UberCheckstyleLinter2 extends ArcanistFutureLinter {
   }
 
   public function getLinterConfigurationName() {
-    return 'checkstyle2';
+    return 'checkstyle';
   }
 
   public function getLinterConfigurationOptions() {
