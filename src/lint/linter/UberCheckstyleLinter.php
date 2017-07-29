@@ -131,7 +131,6 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
     $chunks = array_chunk($paths, 500);
 
     $command = $this->getCommand();
-    print($command . ' ----');
     foreach ($chunks as $chunk) {
       $future = new ExecFuture(sprintf("%s %s", $command, implode(" ", $chunk)));
       $future->setCWD($this->getProjectRoot());
