@@ -81,12 +81,14 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
   }
 
   private function checkScriptConfiguration() {
-    if (!Filesystem::pathExists($this->checkstyleScript)) {
+    // Some scripts have command line arguments
+    $script = explode(' ', $this->checkstyleScript)[0];
+    if (!Filesystem::pathExists($script)) {
       throw new ArcanistMissingLinterException(
         pht(
           'Unable to locate script "%s" to run linter %s. You may need ' .
           'to install the script, or adjust your linter configuration.',
-          $this->checkstyleScript,
+          $script,
           get_class($this)));
     }
   }
@@ -115,6 +117,10 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
 
   private function getCommand() {
     if ($this->useScript === true) {
+      print("
+            DEPRECATION WARNING: [checkstyle.script] will be deprecated.
+            Use UberCheckStyleLinter's `checkstyle.jar`/`checkstyle.config`
+            or Arcanist's Script-and-Regex linter (https://secure.phabricator.com/book/phabricator/article/arcanist_lint_script_and_regex/)\n\n");
       return $this->checkstyleScript;
     }  else {
       $command = sprintf('java -jar %s -f xml -c %s ',
@@ -150,7 +156,9 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
 
   protected function parseLinterOutput($path, $err, $stdout, $stderr) {
     // Strip out last line of Checkstyle XML output [see: https://github.com/checkstyle/checkstyle/issues/1018]
-    $stdout = substr($stdout, 0, strrpos($stdout, "Checkstyle ends"));
+    if(strpos($stdout, 'Checkstyle ends') !== false) {
+      $stdout = substr($stdout, 0, strrpos($stdout, "Checkstyle ends"));
+    }
     $dom = new DOMDocument();
     @$dom->loadXML($stdout);
 
