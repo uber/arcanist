@@ -140,7 +140,7 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
   final protected function buildFutures(array $paths) {
     $this->checkConfiguration();
     $futures = array();
-    // Call checkstyle in batches of 500
+    // Call checkstyle in batches
     $chunks = array_chunk($paths, this->$maxFiles);
 
     $command = $this->getCommand();
