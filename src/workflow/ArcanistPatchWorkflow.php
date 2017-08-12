@@ -1131,6 +1131,7 @@ EOTEXT
     }
     $prefix = idx($staging, 'prefix', 'phabricator');
     $base_tag = "{$prefix}/base/{$id}";
+    echo pht('Fetching base tag from staging remote')."\n";
     $err = phutil_passthru(
           'git fetch --tag -n %s %s',
           $staging_uri,

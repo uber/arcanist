@@ -89,4 +89,7 @@ abstract class ArcanistDiffBasedWorkflow extends ArcanistWorkflow {
         return array(true, self::VALIDATION_OK, $staging, $staging_uri);
     }
 
+    public function isRawDiffSource() {
+        return $this->getArgument('raw') || $this->getArgument('raw-command');
+    }
 }

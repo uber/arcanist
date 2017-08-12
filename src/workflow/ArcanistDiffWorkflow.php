@@ -439,10 +439,6 @@ EOTEXT
     return $arguments;
   }
 
-  public function isRawDiffSource() {
-    return $this->getArgument('raw') || $this->getArgument('raw-command');
-  }
-
   public function run() {
     $this->console = PhutilConsole::getConsole();
 
