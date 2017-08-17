@@ -3,6 +3,12 @@
 /**
  * Basic test engine for running tests using Maven.
  * Forked from: https://secure.phabricator.com/F738966
+ *
+ * Usage:
+ *  1)  Add the following to .arcconfig
+ *     "unit.engine": "MavenTestEngine",
+ *     "unit.engine.command": "mvn test "
+ *  2)  Run `arc unit`
  */
 final class MavenTestEngine extends ArcanistUnitTestEngine {
 
