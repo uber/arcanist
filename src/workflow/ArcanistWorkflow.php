@@ -1634,6 +1634,12 @@ abstract class ArcanistWorkflow extends Phobject {
     }
   }
 
+  public function didCommitMerge() {
+      $this->dispatchEvent(
+          ArcanistEventType::TYPE_LAND_WILLPUSHREVISION,
+          array());
+  }
+
   final protected function dispatchEvent($type, array $data) {
     $data += array(
       'workflow' => $this,
@@ -1664,7 +1670,6 @@ abstract class ArcanistWorkflow extends Phobject {
     }
 
     $api->setBaseCommit(head($argv));
-
     return $this;
   }
 

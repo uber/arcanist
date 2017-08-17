@@ -6,6 +6,9 @@
 final class ArcanistSubmitWorkflow extends ArcanistWorkflow {
 
   private $isGit;
+  private $isGitSvn;
+  private $isHg;
+  private $isHgSvn;
   private $onto;
   private $branch;
   private $branchType;
@@ -18,19 +21,21 @@ final class ArcanistSubmitWorkflow extends ArcanistWorkflow {
   private $submitQueueUri;
   private $submitQueueClient;
 
+  private $revision;
+  private $messageFile;
+
   const REFTYPE_BRANCH = 'branch';
   const REFTYPE_BOOKMARK = 'bookmark';
 
   public function run() {
     $this->readArguments();
-    $revision = $this->getRevision();
+    $this->getRevision();
     $engine = new UberArcanistSubmitQueueEngine(
       $this->submitQueueClient,
       $this->getConduit());
-    $engine = $engine;
 
     $engine
-      ->setRevision($revision)
+      ->setRevision($this->revision)
       ->setWorkflow($this)
       ->setRepositoryAPI($this->getRepositoryAPI())
       ->setSourceRef($this->branch)
@@ -40,11 +45,27 @@ final class ArcanistSubmitWorkflow extends ArcanistWorkflow {
       ->setSkipUpdateWorkingCopy(false)
       ->setShouldHold(false)
       ->setShouldSquash(false)
+      ->setBuildMessageCallback(array($this, 'buildEngineMessage'))
       ->setShouldPreview($this->preview);
 
     $engine->execute();
 
     return 0;
+  }
+
+  public function buildEngineMessage(UberArcanistSubmitQueueEngine $engine) {
+      /*
+       * This method get commit message and writes to local file for use by the engine during push
+       */
+      $message = $this->getConduit()->callMethodSynchronous(
+          'differential.getcommitmessage',
+          array(
+              'revision_id' => $this->revision['id'],
+          ));
+
+      $this->messageFile = new TempFile();
+      Filesystem::writeFile($this->messageFile, $message);
+      $engine->setCommitMessageFile($this->messageFile);
   }
 
   public function getWorkflowName() {
@@ -114,10 +135,25 @@ EOTEXT
   private function readArguments() {
     $repository_api = $this->getRepositoryAPI();
     $this->isGit = $repository_api instanceof ArcanistGitAPI;
+    $this->isHg = $repository_api instanceof ArcanistMercurialAPI;
+
+    if ($this->isGit) {
+      $repository = $this->loadProjectRepository();
+      $this->isGitSvn = (idx($repository, 'vcs') == 'svn');
+    }
+
+    if ($this->isHg) {
+      $this->isHgSvn = $repository_api->isHgSubversionRepo();
+    }
+
     if (!$this->isGit) {
       $message = pht(
         "You are trying to use submit workflow, but the submit workflow only works for git repositories");
       throw new ArcanistUsageException($message);
+    } elseif ($this->isGitSvn) {
+        $message = pht(
+            "GITSVN is not supported for submit workflow ");
+        throw new ArcanistUsageException($message);
     }
 
     $branch = $this->getArgument('branch');
@@ -255,7 +291,116 @@ EOTEXT
 
       throw new ArcanistUsageException($message);
     }
+    $this->revision = head($revisions);
 
+    $rev_status = $this->revision['status'];
+    $rev_id = $this->revision['id'];
+    $rev_title = $this->revision['title'];
+    $rev_auxiliary = idx($this->revision, 'auxiliary', array());
+
+    if ($this->revision['authorPHID'] != $this->getUserPHID()) {
+      $other_author = $this->getConduit()->callMethodSynchronous(
+        'user.query',
+        array(
+          'phids' => array($this->revision['authorPHID']),
+        ));
+      $other_author = ipull($other_author, 'userName', 'phid');
+      $other_author = $other_author[$this->revision['authorPHID']];
+      $ok = phutil_console_confirm(pht(
+        "This %s has revision '%s' but you are not the author. Land this ".
+        "revision by %s?",
+        $this->branchType,
+        "D{$rev_id}: {$rev_title}",
+        $other_author));
+      if (!$ok) {
+        throw new ArcanistUserAbortException();
+      }
+    }
+
+    $uber_prevent_unaccepted_changes = $this->getConfigFromAnySource(
+      'uber.land.prevent-unaccepted-changes',
+      false);
+    if ($uber_prevent_unaccepted_changes && $rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
+      throw new ArcanistUsageException(
+        pht("Revision '%s' has not been accepted.", "D{$rev_id}: {$rev_title}"));
+    }
+
+    if ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
+      $ok = phutil_console_confirm(pht(
+        "Revision '%s' has not been accepted. Continue anyway?",
+        "D{$rev_id}: {$rev_title}"));
+      if (!$ok) {
+        throw new ArcanistUserAbortException();
+      }
+    }
+
+    $uber_review_check_enabled = $this->getConfigFromAnySource(
+      'uber.land.review-check',
+      false);
+    if ($uber_review_check_enabled) {
+      if (!$repository_api instanceof ArcanistGitAPI) {
+        throw new ArcanistUsageException(pht(
+          "'%s' is only supported for GIT repositories.",
+          'uber.land.review-check'));
+      }
+
+      $local_diff = $this->normalizeDiff(
+        $repository_api->getFullGitDiff(
+          $repository_api->getBaseCommit(),
+          $repository_api->getHeadCommit()));
+
+      $reviewed_diff = $this->normalizeDiff(
+        $this->getConduit()->callMethodSynchronous(
+          'differential.getrawdiff',
+          array('diffID' => head($this->revision['diffs']))));
+
+      if ($local_diff !== $reviewed_diff) {
+        $ok = phutil_console_confirm(pht(
+          "Your working copy changes do not match diff submitted for review. ".
+          "Continue anyway?"));
+        if (!$ok) {
+          throw new ArcanistUserAbortException();
+        }
+      }
+    }
+
+    if ($rev_auxiliary) {
+      $phids = idx($rev_auxiliary, 'phabricator:depends-on', array());
+      if ($phids) {
+        $dep_on_revs = $this->getConduit()->callMethodSynchronous(
+          'differential.query',
+          array(
+            'phids' => $phids,
+            'status' => 'status-open',
+          ));
+
+        $open_dep_revs = array();
+        foreach ($dep_on_revs as $dep_on_rev) {
+          $dep_on_rev_id = $dep_on_rev['id'];
+          $dep_on_rev_title = $dep_on_rev['title'];
+          $dep_on_rev_status = $dep_on_rev['status'];
+          $open_dep_revs[$dep_on_rev_id] = $dep_on_rev_title;
+        }
+
+        if (!empty($open_dep_revs)) {
+          $open_revs = array();
+          foreach ($open_dep_revs as $id => $title) {
+            $open_revs[] = '    - D'.$id.': '.$title;
+          }
+          $open_revs = implode("\n", $open_revs);
+
+          echo pht(
+            "Revision '%s' depends on open revisions:\n\n%s",
+            "D{$rev_id}: {$rev_title}",
+            $open_revs);
+
+          $ok = phutil_console_confirm(pht('Continue anyway?'));
+          if (!$ok) {
+            throw new ArcanistUserAbortException();
+          }
+        }
+      }
+    }
     return head($revisions);
   }
 
