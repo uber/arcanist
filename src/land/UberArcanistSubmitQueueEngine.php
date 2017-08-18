@@ -12,16 +12,6 @@ final class UberArcanistSubmitQueueEngine
 
   public function execute() {
     $this->verifySourceAndTargetExist();
-    $this->fetchTarget();
-
-    $this->printLandingCommits();
-
-    if ($this->getShouldPreview()) {
-      $this->writeInfo(
-        pht('PREVIEW'),
-        pht('Completed preview of operation.'));
-      return;
-    }
 
     $workflow = $this->getWorkflow();
     if ($workflow->getConfigFromAnySource("uber.land.submitqueue.events.prepush")) {
@@ -34,8 +24,15 @@ final class UberArcanistSubmitQueueEngine
 
     try {
       $this->identifyRevision();
-      print_r($this->revision);
       assert(!empty($this->revision));
+      $this->printLandingCommits();
+
+      if ($this->getShouldPreview()) {
+        $this->writeInfo(
+          pht('PREVIEW'),
+          pht('Completed preview of operation.'));
+        return;
+      }
       if (!$this->getSkipUpdateWorkingCopy()) {
         $this->updateWorkingCopy();
       }
@@ -77,9 +74,17 @@ final class UberArcanistSubmitQueueEngine
   }
 
   private function identifyRevision() {
-    $api = $this->getRepositoryAPI();
-    $api->execxLocal('checkout %s --', $this->getSourceRef());
-    call_user_func($this->getBuildMessageCallback(), $this);
+    if (empty($this->getRevision())) {
+      $api = $this->getRepositoryAPI();
+      $api->execxLocal('checkout %s --', $this->getSourceRef());
+      if (!empty($this->getBuildMessageCallback())) {
+        call_user_func($this->getBuildMessageCallback(), $this);
+      } else {
+        $message = pht(
+          "Revision and callback empty");
+        throw new ArcanistUsageException($message);
+      }
+    }
   }
 
   private function pushChangeToSubmitQueue() {
@@ -266,6 +271,20 @@ final class UberArcanistSubmitQueueEngine
 
     $todo_workflow = $this->getWorkflow()->buildChildWorkflow('todo', $args);
     $todo_workflow->run();
+  }
+
+  protected function getLandingCommits() {
+    if ($this->getRevision()) {
+      $diff = head(
+        $this->getConduit()->callMethodSynchronous(
+          'differential.querydiffs',
+          array('ids' => array(head($this->getRevision()['diffs'])))));
+      $properties = idx($diff, 'properties', array());
+      $commits = idx($properties, 'local:commits', array());
+      return ipull($commits, 'summary');
+    } else {
+      return array();
+    }
   }
 
   private $submitQueueClient;

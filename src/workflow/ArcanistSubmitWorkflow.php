@@ -39,7 +39,8 @@ final class ArcanistSubmitWorkflow extends ArcanistWorkflow {
       ->setSkipUpdateWorkingCopy(false)
       ->setShouldHold(false)
       ->setShouldSquash(false)
-      ->setShouldPreview($this->preview);
+      ->setShouldPreview($this->preview)
+      ->setSkipUpdateWorkingCopy(true);
 
     $engine->execute();
 
