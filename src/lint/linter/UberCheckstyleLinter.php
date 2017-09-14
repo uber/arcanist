@@ -77,6 +77,7 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
    */
   private function checkConfiguration() {
     if ($this->checkstyleJar != null) {
+      $this->checkJavaConfiguration();
       $this->checkJarConfiguration();
     } else if ($this->checkstyleScript != null) {
       $this->checkScriptConfiguration();
@@ -102,12 +103,14 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
     }
   }
 
-  private function checkJarConfiguration() {
+  private function checkJavaConfiguration() {
     if (!Filesystem::binaryExists("java")) {
       throw new ArcanistMissingLinterException(
         pht('Java is not installed', get_class($this)));
     }
+  }
 
+  private function checkJarConfiguration() {
     $absJarPath = Filesystem::resolvePath($this->checkstyleJar, $this->getProjectRoot());
     if (!Filesystem::pathExists($absJarPath)) {
       throw new ArcanistMissingLinterException(
