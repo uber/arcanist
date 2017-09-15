@@ -87,6 +87,9 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
      */
     private function checkConfiguration() {
         if ($this->checkstyleJar != null) {
+            if ($this->checkstyleConfig != null) {
+                $this->checkCheckstyleConfig($this->checkstyleConfig);
+            }
             $this->checkJavaConfiguration();
             $this->checkJarConfiguration($this->checkstyleJar, $this->checkstyleURL);
         } else if ($this->checkstyleScript != null) {
@@ -96,6 +99,19 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
             throw new ArcanistMissingLinterException(
                 pht('Missing config.  Either \'checkstyle.script\' or \'checkstyle.jar\' need to be set. ')
             );
+        }
+    }
+
+    private function checkCheckstyleConfig($checkstyleConfig) {
+        $absScriptPath = Filesystem::resolvePath($checkstyleConfig, $this->getProjectRoot());
+        if (!Filesystem::pathExists($absScriptPath)) {
+            throw new InvalidArgumentException(
+                pht(
+                    'Unable to locate checkstyle config "%s" to run linter %s. ' .
+                    'Either set it to a valid location in your linter ' .
+                    'configuration or leave it unset.',
+                    $absScriptPath,
+                    get_class($this)));
         }
     }
 
@@ -183,9 +199,11 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
         if ($this->useScript === true) {
             return $this->checkstyleScript;
         }  else {
-            $command = sprintf('java -jar %s -f xml -c %s ',
-                $this->checkstyleJar,
-                $this->checkstyleConfig);
+            $command = sprintf('java -jar %s -f xml ', $this->checkstyleJar);
+            if($this->checkstyleConfig) {
+                $command .= sprintf('-c %s ', $this->checkstyleConfig);
+            }
+            
             return $command;
         }
     }
