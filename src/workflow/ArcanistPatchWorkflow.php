@@ -859,12 +859,26 @@ EOTEXT
     $revision_id    = $bundle->getRevisionID();
     $commit_message = null;
     $prompt_message = null;
+    print_r($revision_id);
 
     // if we have a revision id the commit message is in differential
 
     // TODO: See T848 for the authenticated stuff.
     if ($revision_id && $this->isConduitAuthenticated()) {
 
+      $conduit        = $this->getConduit();
+      $commit_message = $conduit->callMethodSynchronous(
+        'differential.getcommitmessage',
+        array(
+          'revision_id' => $revision_id,
+        ));
+      $prompt_message = pht(
+        '  Note arcanist failed to load the commit message '.
+        'from differential for revision %s.',
+        "D{$revision_id}");
+    }
+
+    if (!$commit_message && $revision_id) {
       $conduit        = $this->getConduit();
       $commit_message = $conduit->callMethodSynchronous(
         'differential.getcommitmessage',
