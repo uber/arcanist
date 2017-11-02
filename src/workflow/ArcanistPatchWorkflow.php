@@ -859,7 +859,6 @@ EOTEXT
     $revision_id    = $bundle->getRevisionID();
     $commit_message = null;
     $prompt_message = null;
-    print_r($revision_id);
 
     // if we have a revision id the commit message is in differential
 
