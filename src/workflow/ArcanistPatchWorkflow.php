@@ -879,6 +879,7 @@ EOTEXT
     }
 
     if (!$commit_message && $revision_id) {
+      $this->authenticateConduit();
       $conduit        = $this->getConduit();
       $commit_message = $conduit->callMethodSynchronous(
         'differential.getcommitmessage',
