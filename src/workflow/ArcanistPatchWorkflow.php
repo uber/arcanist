@@ -373,6 +373,28 @@ EOTEXT
     echo pht('Done.')."\n";
   }
 
+  /**
+   * This function checks if the sha that is passed is an incestor of the current HEAD.
+   *
+   * @return bool true if the base_sha is present in the history of the current branch; false otherwise
+   */
+  private function revisionInCurrentHEAD($base_sha, ArcanistRepositoryAPI $repository_api) {
+    try {
+      if ($repository_api instanceof ArcanistGitAPI) {
+        list($err, $stdout, $stderr) = $repository_api->execManualLocal('merge-base --is-ancestor %s HEAD', $base_sha);
+        if (!$err) {
+          return true;
+        } else{
+          return false;
+        }
+      }
+    } catch (Exception $ex) {
+      // do nothing.
+    }
+
+    return false;
+  }
+
   public function run() {
     $source = $this->getSource();
     $param = $this->getSourceParam();
@@ -446,7 +468,19 @@ EOTEXT
     $repository_api = $this->getRepositoryAPI();
     $has_base_revision = $repository_api->hasLocalCommit(
       $bundle->getBaseRevision());
-    if ($this->canBranch() &&
+    $revision_in_current_head = $this->revisionInCurrentHEAD($bundle->getBaseRevision(), $repository_api);
+
+    // if the commit's base-revision that you are trying to patch is already part of the current branch's
+    // history and you want to apply the patch on top of the current HEAD, then there is no need to create a
+    // separate branch, apply the change on top of the newly created branch and cherry-pick it as the change
+    // can be applied directly on the current HEAD.
+    //
+    // This is more of an optimization to avoid the redundant checkout and helps tremendously in SubmitQueue as
+    // constant checkouts are expensive in mono-repos.
+    $need_not_create_branch = $revision_in_current_head && !$this->shouldBranch();
+    if ($need_not_create_branch) {
+
+    } else if ($this->canBranch() &&
          ($this->shouldBranch() ||
          ($this->shouldCommit() && $has_base_revision))) {
 
@@ -746,7 +780,8 @@ EOTEXT
         $verb = pht('applied');
       }
 
-      if ($this->canBranch() &&
+      if (!$need_not_create_branch &&
+          $this->canBranch() &&
           !$this->shouldBranch() &&
           $this->shouldCommit() && $has_base_revision) {
         $repository_api->execxLocal('checkout %s', $original_branch);
