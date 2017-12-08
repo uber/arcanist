@@ -285,6 +285,7 @@ final class UberArcanistSubmitQueueEngine
       if (!$result) {
         return array("There are no commits on \"master\" which are not already present on the target.");
       }
+      return $result;
     } else {
       return array();
     }
