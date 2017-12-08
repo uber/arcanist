@@ -281,7 +281,10 @@ final class UberArcanistSubmitQueueEngine
           array('ids' => array(head($this->getRevision()['diffs'])))));
       $properties = idx($diff, 'properties', array());
       $commits = idx($properties, 'local:commits', array());
-      return ipull($commits, 'summary');
+      $result = ipull($commits, 'summary');
+      if (!$result) {
+        return array("There are no commits on \"master\" which are not already present on the target.");
+      }
     } else {
       return array();
     }
