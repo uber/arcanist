@@ -1,11 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: varadarb
- * Date: 8/11/17
- * Time: 3:38 PM
- */
-
 
 /**
  * Sends changes from your working copy to Differential for code review.
