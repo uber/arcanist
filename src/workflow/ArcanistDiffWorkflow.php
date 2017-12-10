@@ -707,7 +707,6 @@ EOTEXT
         $use_fields = array();
       }
 
-      echo pht("Revision is set=%s", $revision_id);
       $should_edit = $this->getArgument('edit');
       $edit_messages = $this->readScratchJSONFile('edit-messages.json');
       $remote_corpus = idx($edit_messages, $revision_id);

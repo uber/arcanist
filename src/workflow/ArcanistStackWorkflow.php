@@ -546,14 +546,6 @@ EOTEXT
     }
   }
 
-  // copy of the first part of the findRevision()
-  // reason it has been copied as a separate function is that this way it
-  // is easier to maintain with the upstream changes
-  public function uberGetRevision() {
-    $this->findRevision();
-    return $this->revision;
-  }
-
   private function findRevisions() {
     $repository_api = $this->getRepositoryAPI();
     $this->parseBaseCommitArgument(array($this->ontoRemoteBranch));
@@ -657,14 +649,8 @@ EOTEXT
     $this->debugLog("Revision Ids in stack order: %s", implode(",", $this->revision_ids));
   }
 
-  private function normalizeDiff($text) {
-    $changes = id(new ArcanistDiffParser())->parseDiff($text);
-    ksort($changes);
-    return ArcanistBundle::newFromChanges($changes)->toGitPatch();
-  }
-
   public function getSupportedRevisionControlSystems() {
-    return array('git', 'hg');
+    return array('git');
   }
 
   private function getBranchOrBookmark() {
@@ -786,12 +772,6 @@ EOTEXT
     // TODO: This is oh-so-gross.
     $this->findRevisions();
     $engine->setCommitMessageFile($this->messageFile);
-  }
-
-  public function didCommitMerge() {
-    $this->dispatchEvent(
-      ArcanistEventType::TYPE_LAND_WILLPUSHREVISION,
-      array());
   }
 
   public function didPush() {
