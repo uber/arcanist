@@ -774,6 +774,12 @@ EOTEXT
     $engine->setCommitMessageFile($this->messageFile);
   }
 
+  public function didCommitMerge() {
+    $this->dispatchEvent(
+      ArcanistEventType::TYPE_LAND_WILLPUSHREVISION,
+      array());
+  }
+
   public function didPush() {
     if ($this->shouldUseSubmitQueue) {
       return;
