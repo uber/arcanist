@@ -120,6 +120,8 @@ final class UberArcanistStackSubmitQueueEngine
       $this->runCommandSilently(array("echo", "N", "|", "arc", 'patch', "--diff", $latestDiffId,
         "--uber-use-staging-git-tags", "--uber-use-merge-strategy"));
       $repository_api->reloadWorkingCopy();
+      //Set Base Commit to be HEAD-1 as arc-patch guarantees single commit-id
+      $repository_api->setBaseCommit("HEAD~1");
       $branchName = $repository_api->getBranchName();
       $this->directPatchApplyBranches[$revision_id] = $branchName;
       $this->copyDiff($repository_api, $revision_id, $branchName);
