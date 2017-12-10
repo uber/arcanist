@@ -71,13 +71,15 @@ final class UberArcanistStackSubmitQueueEngine
 
   private function cleanupTemporaryBranches(&$localBranches) {
     $api = $this->getRepositoryAPI();
-    foreach ($localBranches as $revision => $branch) {
-      $this->debugLog("Deleting temporary branch %s\n", $branch);
-      try {
-        $api->execxLocal('branch -D -- %s', $branch);
-      } catch (Exception $ex) {
-        $this->writeInfo("ARC_CLEANUP_ERROR",
-          pht("Unable to remove temporary branch %s failed with error.code=", $branch), $ex);
+    if (!empty($localBranches)) {
+      foreach ($localBranches as $revision => $branch) {
+        $this->debugLog("Deleting temporary branch %s\n", $branch);
+        try {
+          $api->execxLocal('branch -D -- %s', $branch);
+        } catch (Exception $ex) {
+          $this->writeInfo("ARC_CLEANUP_ERROR",
+            pht("Unable to remove temporary branch %s failed with error.code=", $branch), $ex);
+        }
       }
     }
   }
