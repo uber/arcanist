@@ -54,6 +54,33 @@ EOTEXT
           Submits an accepted stack of diffs after review to Submit Queue for landing. This command is the last
           step in the standard Differential pre-publish code review workflow.
 
+          FAQS:
+          1. How does arc-stack detect the list of revisions in the stack ?
+             arc-stack treats all the arcanist-revisions (DXX) between HEAD and base-revisions as a single-stack.
+             It collects the revisions from git commit log. There is no need to specify explicit stack dependency.
+
+          2. do my diffs need to have explicit dependency in phab?
+             No, there is no need to specify dependency in phab. arc-stack automatically figures it from commit-log
+             of your current branch.
+
+          3. If I have diffs 1-8 on my branch can I just land 1-5?
+             Yes, it is possible. You just have to make 5 as your HEAD commit and run "arc stack".
+
+          4. What validations are done as part of arc-stack ?
+             Apart from general validations done in "arc land" (like diff and buildable status), arc stack
+             ensures each revision in the stack is stacked against the latest diff of its parent. If not, it
+             will try to auto-rebase (if user agrees) and then do arc diff. 
+  
+          5. What are the requirements for a repo to be stack-diff ready ?
+             arc stack for Submit Queue relies on tag-based patching (git tags in staging repos) to ensure any arbitrary
+             revision in the stack can be patched for running merge-conflict and build-checking validations. For this case,
+             arc patch has a new flag "uber-use-staging-git-tags".  In other words, the 2 requirements are:
+
+              (a) Staging repository must be enabled for the repo.
+              (b) Jenkins jobs that runs validations as part of Submit Queue MUST use the above flag during arc patch.
+          
+          DESCRIPTION:
+
           The workflow selects a target branch to land onto and a remote where
           the change will be pushed to.
 
@@ -168,8 +195,7 @@ EOTEXT
       '*' => 'branch',
       'tbr' => array(
         'help' => pht(
-          'tbr: To-Be-Reviewed. Skips the submit-queue if the submit-queue '.
-          'is enabled for this repo.'),
+          'tbr: To-Be-Reviewed. Not supported. Use arc-land.'),
         'supports' => array(
           'git',
         ),
