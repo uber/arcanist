@@ -70,12 +70,16 @@ EOTEXT
 
           4. What validations are done as part of arc-stack ?
              Apart from general validations done in "arc land" (like diff and buildable status), arc stack
-             ensures each revision in the stack is stacked against the latest diff of its parent. If not, it
-             will try to auto-rebase (if user agrees) and then do arc diff. Users are still expected to do
-             rebase the first diff in the stack against the target branch before running arc stack. Otherwise,
-             Submit Queue may reject the request during Merge-Validation Check.
+             ensures each revision in the stack is stacked against the latest diff of its parent. 
+             
+          5. Will arc-stack do auto-rebase if it detects inconsistencies ?
+             If arc stack detects rebase inconsistencies, Users will be prompted to rebase. Arcanist can also try to 
+             auto rebase and arc-diff on behalf of user but this is ONLY BEST EFFORT. If there are merge-conflicts,
+             it would exit and users would need to fix the conflicts and cleanup branches themselves.
+             Users are still expected to do rebase the first diff in the stack against the target branch before
+             running arc stack. Otherwise, Submit Queue may reject the request during Merge-Validation Check.
   
-          5. What are the requirements for a repo to be stack-diff ready ?
+          6. What are the requirements for a repo to be stack-diff ready ?
              arc stack for Submit Queue relies on tag-based patching (git tags in staging repos) to ensure any arbitrary
              revision in the stack can be patched for running merge-conflict and build-checking validations. For this case,
              arc patch has a new flag "uber-use-staging-git-tags".  In other words, the 2 requirements are:
@@ -221,7 +225,7 @@ EOTEXT
       ),
       'disable-rebase-check' => array(
         'help' => pht(
-          'Disables rebase check in the validation phase'),
+          'Disables rebase check in the validation phase.'),
       )
     );
   }
@@ -702,8 +706,8 @@ EOTEXT
    * Check if a diff has a running or failed buildable, and prompt the user
    * before landing if it does.
    */
-  private function checkForBuicheckForBuildablesldables($diff_phid, $promptForUserAccept) {
-    // NOTE: Since Harbormaster is still beta and this stuff all got added
+  private function checkForBuildables($diff_phid, $promptForUserAccept) {
+    // NOTE: Since Harbormaster checkForBuildablesis still beta and this stuff all got added
     // recently, just bail if we can't find a buildable. This is just an
     // advisory check intended to prevent human error.
 
