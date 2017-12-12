@@ -64,7 +64,9 @@ EOTEXT
              of your current branch.
 
           3. If I have diffs 1-8 on my branch can I just land 1-5?
-             Yes, it is possible. You just have to make 5 as your HEAD commit and run "arc stack".
+             Yes, it is possible. You just have to create a named-branch with 5 as your HEAD commit and run "arc stack".
+                 git checkout -b <branch_name> <commit-id-of-5>
+                 arc stack
 
           4. What validations are done as part of arc-stack ?
              Apart from general validations done in "arc land" (like diff and buildable status), arc stack
