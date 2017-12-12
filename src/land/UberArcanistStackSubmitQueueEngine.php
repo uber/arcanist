@@ -11,6 +11,7 @@ final class UberArcanistStackSubmitQueueEngine
   private $traceModeEnabled;
   private $tempBranch;
   private $rebaseCheckEnabled;
+  private $cleanupDone;
 
   /**
    * @return mixed
@@ -59,14 +60,23 @@ final class UberArcanistStackSubmitQueueEngine
    * Cleanup temporary branches created for validations
    */
   private function cleanup() {
-    $api = $this->getRepositoryAPI();
-    // Go to parent branch.
-    $api->execxLocal('checkout %s', $this->getTargetOnto());
-    $api->reloadWorkingCopy();
-    $this->cleanupTemporaryBranches($this->rebasePatchApplyBranches);
-    $this->cleanupTemporaryBranches($this->directPatchApplyBranches);
-    $tempArray = array( "tmp" => $this->tempBranch);
-    $this->cleanupTemporaryBranches($tempArray);
+    $console = PhutilConsole::getConsole();
+    if (!$this->cleanupDone) {
+      $console->writeOut("**<bg:blue> %s </bg>** %s\n", 'Cleaning up temp branches', pht(""));
+
+      $api = $this->getRepositoryAPI();
+      // Go to parent branch.
+      $api->execxLocal('checkout %s', $this->getTargetOnto());
+      $api->reloadWorkingCopy();
+      $this->cleanupTemporaryBranches($this->rebasePatchApplyBranches);
+      $this->cleanupTemporaryBranches($this->directPatchApplyBranches);
+      $tempArray = array("tmp" => $this->tempBranch);
+      $this->cleanupTemporaryBranches($tempArray);
+      $console->writeOut("**<bg:green> %s </bg>** %s\n", 'Finished Cleaning up temp branches', pht(""));
+      $this->cleanupDone = true;
+    } else {
+      $console->writeOut("**<bg:yellow> %s </bg>** %s\n", 'Cleaning already done. skipping', pht(""));
+    }
   }
 
   private function cleanupTemporaryBranches(&$localBranches) {
@@ -106,6 +116,7 @@ final class UberArcanistStackSubmitQueueEngine
    * Create another copy of the branch to do rebase check.
    */
   private function setupBranches() {
+    $this->cleanupDone = false;
     $repository_api = $this->getRepositoryAPI();
     $base_ref =  $repository_api->getBaseCommit();
     $base_revision = $base_ref;
@@ -157,30 +168,28 @@ final class UberArcanistStackSubmitQueueEngine
     }
   }
 
-  private function rebase($targetBranch, $ancestorBranches, $verbose) {
+  private function rebase($targetBranch, $ontoBranch, $verbose) {
     $repository_api = $this->getRepositoryAPI();
     $repository_api->execxLocal('checkout %s', $targetBranch);
     $repository_api->reloadWorkingCopy();
-    if (!empty($ancestorBranches)) {
-      foreach ($ancestorBranches as $ontoBranch) {
-        chdir($repository_api->getPath());
-        if ($verbose) {
-          echo phutil_console_format(pht('Rebasing **%s** onto **%s**', $targetBranch, $ontoBranch) . "\n");
-        }
-        if (!$verbose) {
-          $this->runCommandSilently(array("echo", "y", "|", "git","rebase", pht("%s", $ontoBranch)));
-        } else {
-          $err = phutil_passthru('git rebase %s', $ontoBranch);
-          if ($err) {
-            throw new ArcanistUsageException(pht(
-              "'%s' failed. You can abort with '%s', or resolve conflicts " .
-              "and use '%s' to continue forward. After resolving the rebase, " .
-              "run '%s'.",
-              sprintf('git rebase %s', $ontoBranch),
-              'git rebase --abort',
-              'git rebase --continue',
-              'arc diff'));
-          }
+    if ($ontoBranch != null) {
+      chdir($repository_api->getPath());
+      if ($verbose) {
+        echo phutil_console_format(pht('Rebasing **%s** onto **%s**', $targetBranch, $ontoBranch) . "\n");
+      }
+      if (!$verbose) {
+        $this->runCommandSilently(array("echo", "y", "|", "git","rebase", pht("%s", $ontoBranch)));
+      } else {
+        $err = phutil_passthru('git rebase %s', $ontoBranch);
+        if ($err) {
+          throw new ArcanistUsageException(pht(
+            "'%s' failed. You can abort with '%s', or resolve conflicts " .
+            "and use '%s' to continue forward. After resolving the rebase, " .
+            "run '%s'.",
+            sprintf('git rebase %s', $ontoBranch),
+            'git rebase --abort',
+            'git rebase --continue',
+            'arc diff'));
         }
       }
       $repository_api->reloadWorkingCopy();
@@ -191,7 +200,6 @@ final class UberArcanistStackSubmitQueueEngine
     $prevIndex = $startIndex -1;
     //By definition, Prev Index will always be valid
     assert($prevIndex >= 0,"Unexpected: Starting index for rebasing + arc-diff");
-    $ancestorBranches = array();
     for ( $index=$startIndex; $index< count($this->revisionIdsInStackOrder); $index++) {
       $prevDiff = $this->revisionIdsInStackOrder[$prevIndex];
       $currDiff = $this->revisionIdsInStackOrder[$index];
@@ -199,8 +207,7 @@ final class UberArcanistStackSubmitQueueEngine
         pht('Rebasing diff D%s onto D%s and doing arc-diff for D%s',$currDiff, $prevDiff, $currDiff));
       $currBranch = $this->rebasePatchApplyBranches[$currDiff];
       $parentBranch = $this->rebasePatchApplyBranches[$prevDiff];
-      $ancestorBranches[] = $parentBranch;
-      $this->rebase($currBranch, $ancestorBranches, true);
+      $this->rebase($currBranch, $parentBranch, true);
       $this->runChildWorkflow('diff',
         array('--update', pht('D%s', $currDiff), 'HEAD^1'),
         "ARC_DIFF_ERROR",
@@ -260,11 +267,11 @@ final class UberArcanistStackSubmitQueueEngine
     $parentRevisionId = null;
     $repository_api = $this->getRepositoryAPI();
     $index = 0;
-    $ancestorBranches = array();
+    $parentBranch = null;
     foreach($this->revisionIdsInStackOrder as $revision_id) {
       $repository_api->reloadWorkingCopy();
       $currBranch = $this->rebasePatchApplyBranches[$revision_id];
-      $this->rebase($currBranch, $ancestorBranches, $this->traceModeEnabled);
+      $this->rebase($currBranch, $parentBranch, $this->traceModeEnabled);
       $repository_api->reloadWorkingCopy();
       // We are in current branch. Set Base Commit to be HEAD-1
       $repository_api->setBaseCommit("HEAD~1");
@@ -278,15 +285,17 @@ final class UberArcanistStackSubmitQueueEngine
           $revision_id, $repository_api->getBaseCommit(), $repository_api->getHeadCommit(), $currBranch, $local_diff);
         $this->debugLog("Direct patch diff (%s)\n", $this->directPatchDiffContainer[$revision_id]);
         $ok = phutil_console_confirm(pht(
-          "Revision D%s does not seem to be based-off of latest diffId of revision D%s. ".
-          "Do you want arcanist to auto arc-diff %s and its ".
-          "dependent diffs?", $revision_id, $parentRevisionId, $revision_id));
+          "IMPORTANT - Revision D%s does not seem to be based-off of latest diffId of revision D%s. ".
+          "Please rebase D%s and rest of revisions in the stack. Arcanist can also try to auto rebase and arc-diff for".
+          " you but this is ONLY BEST EFFORT. If there are merge-conflicts, it would exit and you may need to fix the".
+          " conflicts and cleanup branches yourself. Do you still want arcanist to auto arc-diff %s and its ".
+          "dependent diffs?", $revision_id, $parentRevisionId, $revision_id, $revision_id));
         if (!$ok) {
           throw new ArcanistUserAbortException();
         }
         return $index;
       }
-      $ancestorBranches[] = $currBranch;
+      $parentBranch = $currBranch;
       $parentRevisionId = $revision_id;
       $index++;
     }
@@ -298,15 +307,22 @@ final class UberArcanistStackSubmitQueueEngine
    * Ensures each revision in the diff is rebased against latest diff of its parent.
    */
   protected function validate() {
+    $prevRestoreFlag = $this->restoreWhenDestroyed;
+    $this->restoreWhenDestroyed = false;
     try {
       $console = PhutilConsole::getConsole();
       $console->writeOut("**<bg:blue> %s </bg>** %s\n", "VERIFY", "Starting validations !!");
+      $console->writeOut("**<bg:yellow> %s </bg>** %s\n", "NOTE",
+        "Temp branches are being created. If you kill the process, please make sure to cleanup the branches !!");
       $this->buildRevisionIdToDiffIds();
       if ($this->rebaseCheckEnabled) {
-        $console->writeOut("**<bg:blue> %s </bg>** %s\n", "ARC_PATCH", pht("Checking if rebase is needed. This step could potentially take a while  !!"));
-        $console->writeOut("***<bg:blue> %s </bg>*** %s\n", "ARC_PATCH", pht(" Applying patches to temporary branches !!"));
+        $console->writeOut("**<bg:blue> %s </bg>** %s\n", "ARC_PATCH",
+          pht("Checking if rebase is needed. This step could potentially take a while  !!"));
+        $console->writeOut("***<bg:blue> %s </bg>*** %s\n", "ARC_PATCH",
+          pht(" Applying patches to temporary branches !!"));
         $this->setupBranches();
-        $console->writeOut("***<bg:blue> %s </bg>*** %s\n", "ARC_PATCH", pht("Finished applying patches to temporary branches !!"));
+        $console->writeOut("***<bg:blue> %s </bg>*** %s\n", "ARC_PATCH",
+          pht("Finished applying patches to temporary branches !!"));
         $badIndex = $this->ensureStackRebasedCorrectly();
         $badDiff = null;
         if ($badIndex > 0) {
@@ -322,6 +338,7 @@ final class UberArcanistStackSubmitQueueEngine
       $console->writeOut("**<bg:green> %s </bg>** %s\n", 'Verification Passed', pht("Ready to land"));
     } finally {
       $this->cleanup();
+      $this->restoreWhenDestroyed = $prevRestoreFlag;
     }
   }
 
