@@ -618,7 +618,7 @@ EOTEXT
 
     $this->revisions = array_reverse($revisions);
     $this->revision_ids = array();
-
+    $initialRound = true;
     foreach ($this->revisions as $revision) {
       $rev_status = $revision['status'];
       $rev_id = $revision['id'];
@@ -656,7 +656,7 @@ EOTEXT
       if ($rev_status == ArcanistDifferentialRevisionStatus::CLOSED) {
         throw new ArcanistUsageException(
           pht("Revision '%s' has already been closed.", "D{$rev_id}: {$rev_title}"));
-      } elseif ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED) {
+      } elseif ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED && $initialRound) {
         $ok = phutil_console_confirm(pht(
           "Revision '%s' has not been accepted. Continue anyway?",
           "D{$rev_id}: {$rev_title}"));
@@ -667,7 +667,7 @@ EOTEXT
 
       $diff_phid = idx($revision, 'activeDiffPHID');
       if ($diff_phid) {
-        $this->checkForBuildables($diff_phid);
+        $this->checkForBuildables($diff_phid, $initialRound);
       }
       $message = $this->getConduit()->callMethodSynchronous(
         'differential.getcommitmessage', array('revision_id' => $rev_id,));
@@ -675,6 +675,7 @@ EOTEXT
       Filesystem::writeFile($this->messageFile, $message);
 
       echo pht("Adding revision '%s' for landing...", "D{$rev_id}: {$rev_title}")."\n";
+      $initialRound = false;
     }
     $this->debugLog("Revision Ids in stack order: %s", implode(",", $this->revision_ids));
   }
@@ -701,7 +702,7 @@ EOTEXT
    * Check if a diff has a running or failed buildable, and prompt the user
    * before landing if it does.
    */
-  private function checkForBuildables($diff_phid) {
+  private function checkForBuicheckForBuildablesldables($diff_phid, $promptForUserAccept) {
     // NOTE: Since Harbormaster is still beta and this stuff all got added
     // recently, just bail if we can't find a buildable. This is just an
     // advisory check intended to prevent human error.
@@ -722,6 +723,7 @@ EOTEXT
       return;
     }
 
+    $prompt = null;
     $console = PhutilConsole::getConsole();
 
     $buildable = head($buildables['data']);
@@ -738,7 +740,9 @@ EOTEXT
       case 'building':
         $message = pht(
           'Harbormaster is still building the active diff for this revision:');
-        $prompt = pht('Land revision anyway, despite ongoing build?');
+        if ($promptForUserAccept) {
+          $prompt = pht('Land revision anyway, despite ongoing build?');
+        }
         break;
       case 'failed':
         $message = pht(
@@ -781,13 +785,13 @@ EOTEXT
       pht('Harbormaster URI'),
       $buildable['uri']);
 
-    if ($this->getConfigFromAnySource("uber.land.buildables-check") && !$this->tbr) {
+    if ($this->getConfigFromAnySource("uber.land.buildables-check")) {
       $console->writeOut("\n");
       throw new ArcanistUsageException(
         pht("All harbormaster buildables have not succeeded."));
     }
 
-    if (!$console->confirm($prompt)) {
+    if (($prompt != null) && (!$console->confirm($prompt))) {
       throw new ArcanistUserAbortException();
     }
   }
