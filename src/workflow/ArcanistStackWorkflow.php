@@ -59,7 +59,7 @@ EOTEXT
              arc-stack treats all the arcanist-revisions (DXX) between HEAD and base-revisions as a single-stack.
              It collects the revisions from git commit log. There is no need to specify explicit stack dependency.
 
-          2. do my diffs need to have explicit dependency in phab?
+          2. Do my diffs need to have explicit dependency in phab?
              No, there is no need to specify dependency in phab. arc-stack automatically figures it from commit-log
              of your current branch.
 
@@ -71,7 +71,9 @@ EOTEXT
           4. What validations are done as part of arc-stack ?
              Apart from general validations done in "arc land" (like diff and buildable status), arc stack
              ensures each revision in the stack is stacked against the latest diff of its parent. If not, it
-             will try to auto-rebase (if user agrees) and then do arc diff. 
+             will try to auto-rebase (if user agrees) and then do arc diff. Users are still expected to do
+             rebase the first diff in the stack against the target branch before running arc stack. Otherwise,
+             Submit Queue may reject the request during Merge-Validation Check.
   
           5. What are the requirements for a repo to be stack-diff ready ?
              arc stack for Submit Queue relies on tag-based patching (git tags in staging repos) to ensure any arbitrary
