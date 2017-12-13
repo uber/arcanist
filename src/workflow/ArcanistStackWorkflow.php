@@ -632,7 +632,7 @@ EOTEXT
 
     $this->revisions = array_reverse($revisions);
     $this->revision_ids = array();
-    $initialRound = true;
+    $user_accepted = false;
     foreach ($this->revisions as $revision) {
       $rev_status = $revision['status'];
       $rev_id = $revision['id'];
@@ -670,18 +670,20 @@ EOTEXT
       if ($rev_status == ArcanistDifferentialRevisionStatus::CLOSED) {
         throw new ArcanistUsageException(
           pht("Revision '%s' has already been closed.", "D{$rev_id}: {$rev_title}"));
-      } elseif ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED && $initialRound) {
+      } elseif ($rev_status != ArcanistDifferentialRevisionStatus::ACCEPTED && !$user_accepted) {
         $ok = phutil_console_confirm(pht(
           "Revision '%s' has not been accepted. Continue anyway?",
           "D{$rev_id}: {$rev_title}"));
         if (!$ok) {
           throw new ArcanistUserAbortException();
         }
+        $user_accepted = true;
       }
 
       $diff_phid = idx($revision, 'activeDiffPHID');
       if ($diff_phid) {
-        $this->checkForBuildables($diff_phid, $initialRound);
+        $accepted = $this->checkForBuildables($diff_phid, !$user_accepted);
+        $user_accepted |= $accepted;
       }
       $message = $this->getConduit()->callMethodSynchronous(
         'differential.getcommitmessage', array('revision_id' => $rev_id,));
@@ -689,7 +691,6 @@ EOTEXT
       Filesystem::writeFile($this->messageFile, $message);
 
       echo pht("Adding revision '%s' for landing...", "D{$rev_id}: {$rev_title}")."\n";
-      $initialRound = false;
     }
     $this->debugLog("Revision Ids in stack order: %s", implode(",", $this->revision_ids));
   }
@@ -729,12 +730,12 @@ EOTEXT
           'manualBuildables' => false,
         ));
     } catch (ConduitClientException $ex) {
-      return;
+      return false;
     }
 
     if (!$buildables['data']) {
       // If there's no corresponding buildable, we're done.
-      return;
+      return false;
     }
 
     $prompt = null;
@@ -747,7 +748,7 @@ EOTEXT
         "**<bg:green> %s </bg>** %s\n",
         pht('BUILDS PASSED'),
         pht('Harbormaster builds for the active diff completed successfully.'));
-      return;
+      return false;
     }
 
     switch ($buildable['buildableStatus']) {
@@ -766,7 +767,7 @@ EOTEXT
         break;
       default:
         // If we don't recognize the status, just bail.
-        return;
+        return false;
     }
 
     $builds = $this->getConduit()->callMethodSynchronous(
@@ -807,7 +808,10 @@ EOTEXT
 
     if (($prompt != null) && (!$console->confirm($prompt))) {
       throw new ArcanistUserAbortException();
+    } elseif ($prompt != null) {
+      return true;
     }
+    return false;
   }
 
   public function uberBuildEngineMessage(UberArcanistStackSubmitQueueEngine $engine) {
