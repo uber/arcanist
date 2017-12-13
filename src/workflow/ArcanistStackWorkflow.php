@@ -55,31 +55,41 @@ EOTEXT
           step in the standard Differential pre-publish code review workflow.
 
           FAQS:
-          1. How does arc-stack detect the list of revisions in the stack ?
+          1. What are the Submit Queue guarantees for Stacked-Diffs ?
+              (a) Submit Queue guarantees atomicity for landing all diffs within a single stack. Either all diffs in the 
+                  stack gets pushed to the remote together (in one single git push) or none of them is pushed.
+              (b) Submit Queue will preserve the commit points at each diff in the stack. Currently, arc land uses one 
+                  commit-message if there are many commits corresponding to a differential. Arc stack will retain that 
+                  behavior (one commit per diff in the stack) but will NOT squash the commits for
+                  different diffs in the stack to one commit.
+              (c) Submit Queue will run build validations at each diff in the stack to ensure each commit point keeps 
+                  the master green.
+
+          2. How does arc-stack detect the list of revisions in the stack ?
              arc-stack treats all the arcanist-revisions (DXX) between HEAD and base-revisions as a single-stack.
              It collects the revisions from git commit log. There is no need to specify explicit stack dependency.
 
-          2. Do my diffs need to have explicit dependency in phab?
+          3. Do my diffs need to have explicit dependency in phab?
              No, there is no need to specify dependency in phab. arc-stack automatically figures it from commit-log
              of your current branch.
 
-          3. If I have diffs 1-8 on my branch can I just land 1-5?
+          4. If I have diffs 1-8 on my branch can I just land 1-5?
              Yes, it is possible. You just have to create a named-branch with 5 as your HEAD commit and run "arc stack".
                  git checkout -b <branch_name> <commit-id-of-5>
                  arc stack
 
-          4. What validations are done as part of arc-stack ?
+          5. What validations are done as part of arc-stack ?
              Apart from general validations done in "arc land" (like diff and buildable status), arc stack
              ensures each revision in the stack is stacked against the latest diff of its parent. 
              
-          5. Will arc-stack do auto-rebase if it detects inconsistencies ?
+          6. Will arc-stack do auto-rebase if it detects inconsistencies ?
              If arc stack detects rebase inconsistencies, Users will be prompted to rebase. Arcanist can also try to 
              auto rebase and arc-diff on behalf of user but this is ONLY BEST EFFORT. If there are merge-conflicts,
              it would exit and users would need to fix the conflicts and cleanup branches themselves.
              Users are still expected to do rebase the first diff in the stack against the target branch before
              running arc stack. Otherwise, Submit Queue may reject the request during Merge-Validation Check.
   
-          6. What are the requirements for a repo to be stack-diff ready ?
+          7. What are the requirements for a repo to be stack-diff ready ?
              arc stack for Submit Queue relies on tag-based patching (git tags in staging repos) to ensure any arbitrary
              revision in the stack can be patched for running merge-conflict and build-checking validations. For this case,
              arc patch has a new flag "uber-use-staging-git-tags".  In other words, the 2 requirements are:
