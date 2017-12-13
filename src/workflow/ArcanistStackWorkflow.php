@@ -96,7 +96,12 @@ EOTEXT
 
               (a) Staging repository must be enabled for the repo.
               (b) Jenkins jobs that runs validations as part of Submit Queue MUST use the above flag during arc patch.
-          
+
+          8. How to contact support team with arc-stack questions ?
+             Please ping us at "Arc Stack" uchat channel.  For any error reporting, please run arc-stack command in verbose mode with
+             ARCANIST_TRACE enabled as below
+                   ARCANIST_TRACE=1 arc stack --trace
+
           DESCRIPTION:
 
           The workflow selects a target branch to land onto and a remote where
