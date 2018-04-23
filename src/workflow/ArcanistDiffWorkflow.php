@@ -453,8 +453,7 @@ EOTEXT
 
     $this->runDiffSetupBasics();
 
-    $revert_plan_check_paths = $this->getConfigurationManager()->getConfigFromAnySource(
-          'differential.revert_plan_check_paths');
+    $revert_plan_check_paths = $this->getRevertPlanCheckPaths();
     if (!is_null($revert_plan_check_paths)) {
       // revert plan checking only happens for certain paths in the repository
       // so, we need to compute the changes early in this case
@@ -1553,6 +1552,15 @@ EOTEXT
 
 
   /**
+   * If revert plan checking is enabled, returns the regexp from config
+   * indicating which paths should be checked.  Otherwise returns null.
+   */
+  private function getRevertPlanCheckPaths() {
+    return $this->getConfigurationManager()->getConfigFromAnySource(
+      'differential.revert_plan_check_paths'
+    );
+  }
+  /**
    * @task message
    */
   private function getCommitMessageFromUser($changes = NULL) {
@@ -1612,8 +1620,7 @@ EOTEXT
         $commit = head($this->getRepositoryAPI()->getLocalCommitInformation());
         $template = $commit['message'];
       } else {
-        $revert_plan_check_paths = $this->getConfigurationManager()->getConfigFromAnySource(
-          'differential.revert_plan_check_paths');
+        $revert_plan_check_paths = $this->getRevertPlanCheckPaths();
         if (!is_null($revert_plan_check_paths) && $this->modifiesPath($revert_plan_check_paths, $changes)) {
           $fields['revertPlan'] = $this->getRevertPlan();
         }
@@ -1774,9 +1781,12 @@ EOTEXT
     $flagged = phutil_console_confirm($ff_prompt, $default_no = false);
     if ($flagged) {
       $flagnames = phutil_console_prompt('Flag name:');
-      return 'Guarded by feature flag ' .  $flagnames;
+      return 'Guarded by feature flag ' . $flagnames;
     } else {
-      $reasons = $this->getConfigurationManager()->getConfigFromAnySource('differential.revert_plan_ommitted_reasons');
+      $reasons =
+        $this->getConfigurationManager()->getConfigFromAnySource(
+          'differential.revert_plan_ommitted_reasons'
+        );
       $prompt = "Please choose reason for no flag:\n";
       for ($i = 0; $i < count($reasons); $i++) {
         $prompt .= pht("%s: %s\n", $i+1, $reasons[$i]);
