@@ -1621,7 +1621,8 @@ EOTEXT
         $template = $commit['message'];
       } else {
         $revert_plan_check_paths = $this->getRevertPlanCheckPaths();
-        if (!is_null($revert_plan_check_paths) && $this->modifiesPath($revert_plan_check_paths, $changes)) {
+        if (!is_null($revert_plan_check_paths)
+          && $this->modifiesPath($revert_plan_check_paths, $changes)) {
           $fields['revertPlan'] = $this->getRevertPlan();
         }
         $template = $conduit->callMethodSynchronous(
