@@ -44,6 +44,10 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
           'ksh',
           'zsh'),
       ),
+      'shellcheck.excluded_rules' => array(
+        'type' => 'optional list<string>',
+        'help' => pht('List of excluded shellcheck rule(s)'),
+      ),
     );
 
     return $options + parent::getLinterConfigurationOptions();
