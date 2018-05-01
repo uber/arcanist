@@ -3,6 +3,8 @@
 /** This linter invokes shellcheck to check on shell code standards */
 final class UberShellCheckLinter extends ArcanistExternalLinter {
 
+  private $exclude;
+
   private $shell = 'bash';
 
   public function getInfoName() {
@@ -55,6 +57,9 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
       case 'shellcheck.shell':
         $this->setShell($value);
         return;
+      case 'shellcheck.exclude':
+        $this->setExclude($value);
+        return;
 
       default:
         return parent::setLinterConfigurationValue($key, $value);
@@ -63,6 +68,11 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
 
   public function setShell($shell) {
     $this->shell = $shell;
+    return $this;
+  }
+
+  public function setExclude($exclude) {
+    $this->exclude = $exclude;
     return $this;
   }
 
@@ -79,8 +89,9 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
   protected function getMandatoryFlags() {
     $options = array();
 
-    // exclude `not following` shellcheck rule by default
-    $options[] = '--exclude=SC1091'
+    if ($this->exclude) {
+      $options[] = '--exclude='.$this->exclude;
+    }
     $options[] = '--format=checkstyle';
 
     if ($this->shell) {
