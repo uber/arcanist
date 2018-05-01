@@ -1,7 +1,7 @@
 <?php
 
 /** This linter invokes shellcheck to check on shell code standards */
-final class ArcanistShellCheckLinter extends ArcanistExternalLinter {
+final class UberShellCheckLinter extends ArcanistExternalLinter {
 
   private $shell = 'bash';
 
@@ -29,6 +29,10 @@ final class ArcanistShellCheckLinter extends ArcanistExternalLinter {
 
   public function getLinterConfigurationOptions() {
     $options = array(
+      'shellcheck.script' => array(
+        'type' => 'optional string',
+        'help' => pht('Shellcheck script to execute. Script must output shellcheck in XML to $stdout'),
+      ),
       'shellcheck.shell' => array(
         'type' => 'optional string',
         'help' => pht(
@@ -45,6 +49,9 @@ final class ArcanistShellCheckLinter extends ArcanistExternalLinter {
 
   public function setLinterConfigurationValue($key, $value) {
     switch ($key) {
+      case 'shellcheck.script':
+        $this->setBinary($value);
+        return;
       case 'shellcheck.shell':
         $this->setShell($value);
         return;
