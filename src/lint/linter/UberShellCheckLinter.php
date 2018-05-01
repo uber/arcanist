@@ -90,7 +90,7 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
     $options = array();
 
     if ($this->excluded_rules && count($this->excluded_rules) > 0) {
-      $options[] = '--exclude='.$this->excluded_rules;
+      $options[] = '--exclude='.implode(',', $this->excluded_rules);
     }
     $options[] = '--format=checkstyle';
 
