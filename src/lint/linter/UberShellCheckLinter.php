@@ -7,6 +7,8 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
 
   private $shell = 'bash';
 
+  private $warning_as_error = FALSE;
+
   public function getInfoName() {
     return 'ShellCheck';
   }
@@ -48,6 +50,10 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
         'type' => 'optional list<string>',
         'help' => pht('List of excluded shellcheck rule(s)'),
       ),
+      'shellcheck.warning_as_error' => array(
+        'type' => 'optional bool',
+        'help' => pht('Whether to treat warnings as errors'),
+      ),
     );
 
     return $options + parent::getLinterConfigurationOptions();
@@ -64,10 +70,18 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
       case 'shellcheck.excluded_rules':
         $this->setExcludedRules($value);
         return;
+      case 'shellcheck.warning_as_error':
+        $this->setWarningAsError($value);
+        return;
 
       default:
         return parent::setLinterConfigurationValue($key, $value);
     }
+  }
+
+  public function setExcludedRules($excluded_rules) {
+    $this->excluded_rules = $excluded_rules;
+    return $this;
   }
 
   public function setShell($shell) {
@@ -75,8 +89,8 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
     return $this;
   }
 
-  public function setExcludedRules($excluded_rules) {
-    $this->excluded_rules = $excluded_rules;
+  public function setWarningAsError($warning_as_error) {
+    $this->warning_as_error = $warning_as_error;
     return $this;
   }
 
@@ -88,6 +102,10 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
     return pht(
       'Install ShellCheck with `%s`.',
       'brew install shellcheck');
+  }
+
+  public function shouldExpectCommandErrors() {
+    return false;
   }
 
   protected function getMandatoryFlags() {
@@ -129,7 +147,24 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
     $messages = array();
 
     foreach ($files as $file) {
+      $name = $file->getAttribute('name');
+      $arcPath = ltrim(str_replace(getcwd(), '', $name), '/');
+      if ($arcPath != $path) {
+        continue;
+      }
+      $changedLines = $this->getEngine()->getPathChangedLines($arcPath);
+      if ($changedLines) {
+        $changedLines = array_keys($changedLines);
+      } else {
+        $changedLines = array();
+      }
+
       foreach ($file->getElementsByTagName('error') as $child) {
+        $line = $child->getAttribute('line');
+        if (!in_array($line, $changedLines)) {
+          continue;
+        }
+
         $code = str_replace('ShellCheck.', '', $child->getAttribute('source'));
 
         $message = id(new ArcanistLintMessage())
@@ -146,7 +181,9 @@ final class UberShellCheckLinter extends ArcanistExternalLinter {
             break;
 
           case 'warning':
-            $message->setSeverity(ArcanistLintSeverity::SEVERITY_WARNING);
+            $message->setSeverity($this->warning_as_error
+              ? ArcanistLintSeverity::SEVERITY_ERROR
+              : ArcanistLintSeverity::SEVERITY_WARNING);
             break;
 
           case 'info':
