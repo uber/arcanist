@@ -488,11 +488,7 @@ EOTEXT
         'unit-excuses');
     }
 
-    // $changes may have already been set if revert plan checking is enabled;
-    // don't recompute
-    if (!isset($changes)) {
-      $changes = $this->generateChanges();
-    }
+    $changes = $this->generateChanges();
     if (!$changes) {
       throw new ArcanistUsageException(
         pht('There are no changes to generate a diff from!'));
