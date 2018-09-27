@@ -74,10 +74,12 @@ class UberArcanistSubmitQueueEngine
   }
 
   private function identifyRevision() {
-    if (empty($this->getRevision())) {
+    $r = $this->getRevision();
+    if (empty($r)) {
       $api = $this->getRepositoryAPI();
       $api->execxLocal('checkout %s --', $this->getSourceRef());
-      if (!empty($this->getBuildMessageCallback())) {
+      $b = $this->getBuildMessageCallback();
+      if (!empty($b)) {
         call_user_func($this->getBuildMessageCallback(), $this);
       } else {
         $message = pht(
@@ -244,7 +246,8 @@ class UberArcanistSubmitQueueEngine
   }
 
   private function uberCreateTask($revision) {
-    if (empty($this->getSubmitQueueTags())) {
+    $t = $this->getSubmitQueueTags();
+    if (empty($t)) {
       return;
     }
 
