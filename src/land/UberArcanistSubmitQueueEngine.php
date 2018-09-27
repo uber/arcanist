@@ -78,9 +78,9 @@ class UberArcanistSubmitQueueEngine
     if (empty($r)) {
       $api = $this->getRepositoryAPI();
       $api->execxLocal('checkout %s --', $this->getSourceRef());
-      $b = $this->getBuildMessageCallback();
-      if (!empty($b)) {
-        call_user_func($this->getBuildMessageCallback(), $this);
+      $c = $this->getBuildMessageCallback();
+      if (!empty($c)) {
+        call_user_func($c, $this);
       } else {
         $message = pht(
           "Revision and callback empty");
