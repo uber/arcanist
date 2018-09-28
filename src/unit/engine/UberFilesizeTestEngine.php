@@ -64,7 +64,7 @@ final class UberFilesizeTestEngine extends ArcanistUnitTestEngine {
 
     $files = $this->getModifiedFiles();
 
-    $large_files = [];
+    $large_files = array();
     for ($i = 0; $i < count($files); $i++) {
       // skip deleted files and files matching one of the exclude patterns
       if (file_exists($files[$i]) &&
@@ -119,24 +119,25 @@ final class UberFilesizeTestEngine extends ArcanistUnitTestEngine {
   }
 
   private function getLFSFiles() {
-    $output = [];
+    $output = array();
     $return_code = 0;
 
     exec('git lfs ls-files', $output, $return_code);
 
-    $lfs_files = [];
+    $lfs_files = array();
     for ($i = 0; $i < count($output); $i++) {
       // git lfs ls-files format is: <sha> * <filepath>
       // for example:
       // sha12345 * some/path to/file.zip
-      array_push($lfs_files, explode(' ', $output[$i], 3)[2]);
+      $parts = explode(' ', $output[$i], 3);
+      array_push($lfs_files, $parts[2]);
     }
 
     return $lfs_files;
   }
 
   private function getModifiedFiles() {
-    $output = [];
+    $output = array();
     $return_code = 0;
 
     $last_ancestor_sha = 'git merge-base origin/master HEAD';
@@ -155,5 +156,3 @@ final class UberFilesizeTestEngine extends ArcanistUnitTestEngine {
       .$suffixes[floor($base)];
   }
 }
-
-?>
