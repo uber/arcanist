@@ -107,6 +107,9 @@ final class UberFilesizeTestEngine extends ArcanistUnitTestEngine {
     }
 
     private function isExcluded($file, $exclude_paths) {
+        if (!$exclude_paths) {
+            return false;
+        }
         for ($i = 0; $i < count($exclude_paths); $i++) {
             if (preg_match($exclude_paths[$i], $file)) {
                 return true;
