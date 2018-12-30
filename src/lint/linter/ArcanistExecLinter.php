@@ -19,6 +19,14 @@
  *     }
  *   }
  *
+ * This linter can also be configured using .arcconfig, e.g.
+ *
+ *   {
+ *     "lint.engine": "ArcanistSingleLintEngine",
+ *     "lint.engine.single.linter": "ArcanistExecLinter",
+ *     "linter.exec.command": "make lint"
+ *   }
+ *
  * The command will be invoked from the project root, so you can specify a
  * relative path like `scripts/lint.sh` or an absolute path like
  * `/opt/lint/lint.sh`.
@@ -31,8 +39,14 @@ final class ArcanistExecLinter extends ArcanistLinter {
   private $command = null;
 
   public function willLintPaths(array $paths) {
+    $cmd = $this->command;
+    if (!$cmd) {
+      // fallback to .arcconfig
+      $cmd = $this->getEngine()->getConfigurationManager()
+        ->getConfigFromAnySource('linter.exec.command');
+    }
     $root = $this->getProjectRoot();
-    $future = new ExecFuture('%C', $this->command);
+    $future = new ExecFuture('%C', $cmd);
     $future->setCWD($root);
     $future->resolvex(); // non-zero exit code will result in an error
   }
