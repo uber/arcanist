@@ -31,9 +31,6 @@ final class ArcanistPhutilXHPASTLinterStandard
       'xhpast.php-version.windows' => '5.3.0',
       'xhpast.dynamic-string.classes' => array(
         'ExecFuture' => 0,
-        'ConfigurableGolangTestEngine' => 0,
-        'ConfigurablePytestTestEngine' => 0,
-        'UberConfigurableTestEngine' => 0,
       ),
       'xhpast.dynamic-string.functions' => array(
         'pht' => 0,

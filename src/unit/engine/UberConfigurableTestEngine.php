@@ -5,14 +5,14 @@ abstract class UberConfigurableTestEngine extends ArcanistUnitTestEngine {
   /**
    * Try retrieve and validate coverage command from .arconfig.
    *
-   * Coverage command must be set and must have two "%s" placeholders for 
+   * Coverage command must be set and must have two "%s" placeholders for
    * sprintf. Exception is thrown if command is not valid.
    */
   protected function getCoverageCommand($name) {
     $config_manager = $this->getConfigurationManager();
     $coverage_command = $config_manager
       ->getConfigFromAnySource($name);
-    if ("" == $coverage_command) {
+    if ('' == $coverage_command) {
       $message = sprintf(
         'Config option "%s" required for %s is missing. '.
         'Set value in .arcconfig file.',
@@ -29,5 +29,7 @@ abstract class UberConfigurableTestEngine extends ArcanistUnitTestEngine {
         PHP_EOL, $name);
       throw new Exception($message);
     }
+
+    return $coverage_command;
   }
 }

@@ -18,7 +18,6 @@ final class ConfigurableGolangTestEngine extends UberConfigurableTestEngine {
   }
 
   public function buildTestFuture($junit_tmp, $cover_tmp) {
-    $paths = $this->getPaths();
     $coverage_command = $this->getCoverageCommand('unit.golang.command');
     $cmd_line = csprintf($coverage_command, $junit_tmp, $cover_tmp);
 
@@ -51,7 +50,6 @@ final class ConfigurableGolangTestEngine extends UberConfigurableTestEngine {
     $coverage_dom = new DOMDocument();
     $coverage_dom->loadXML($coverage_data);
 
-    $paths = $this->getPaths();
     $reports = array();
     $classes = $coverage_dom->getElementsByTagName('class');
 
