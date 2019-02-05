@@ -1,6 +1,6 @@
 <?php
 
-final class ConfigurablePytestTestEngine extends ArcanistUnitTestEngine {
+final class ConfigurablePytestTestEngine extends UberConfigurableTestEngine {
 
   private $projectRoot;
 
@@ -24,8 +24,7 @@ final class ConfigurablePytestTestEngine extends ArcanistUnitTestEngine {
   public function buildTestFuture($junit_tmp, $cover_tmp) {
     $paths = $this->getPaths();
     $config_manager = $this->getConfigurationManager();
-    $coverage_command = $config_manager
-      ->getConfigFromAnySource('unit.pytest.command');
+    $coverage_command = $this->getCoverageCommand('unit.pytest.command');
     $cmd_line = csprintf($coverage_command, $junit_tmp);
 
     return new ExecFuture('%C', $cmd_line);
