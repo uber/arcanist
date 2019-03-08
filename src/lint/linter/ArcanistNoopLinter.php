@@ -22,7 +22,7 @@ abstract class ArcanistNoopLinter extends ArcanistExternalLinter {
   }
 
   public function getDefaultBinary() {
-    return '/usr/bin/env true';
+    return 'true';
   }
 
   public function getInstallInstructions() {
