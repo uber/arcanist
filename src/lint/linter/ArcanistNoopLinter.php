@@ -25,16 +25,12 @@ abstract class ArcanistNoopLinter extends ArcanistExternalLinter {
     return '/usr/bin/env';
   }
 
-  public function getDefaultFlags() {
+  protected function getMandatoryFlags() {
     return array('true');
   }
 
   public function getInstallInstructions() {
     return '';
-  }
-
-  protected function getMandatoryFlags() {
-    return array();
   }
 
   public function getVersion() {
