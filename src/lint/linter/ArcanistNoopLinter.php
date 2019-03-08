@@ -22,7 +22,16 @@ abstract class ArcanistNoopLinter extends ArcanistExternalLinter {
   }
 
   public function getDefaultBinary() {
-    return '/bin/true';
+    // There are many possible paths to find truth in life. BSD and Linux took
+    // different paths.
+    $truebin = Filesystem::resolveBinary('true');
+    if ($truebin) {
+      return $truebin;
+    } else {
+       throw new ArcanistMissingLinterException(
+         pht('Unable to find the "true" program on your path.')
+       );
+    }
   }
 
   public function getInstallInstructions() {
