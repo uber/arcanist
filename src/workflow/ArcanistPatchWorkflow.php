@@ -12,6 +12,7 @@ final class ArcanistPatchWorkflow extends ArcanistDiffBasedWorkflow {
 
   private $source;
   private $sourceParam;
+  private $refProvider;
 
   public function getWorkflowName() {
     return 'patch';
@@ -388,8 +389,13 @@ EOTEXT
   }
 
   public function run() {
+    $this->refProvider = new UberRefProvider(
+      $this->configurationManager->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
+    );
+
     $source = $this->getSource();
     $param = $this->getSourceParam();
+
     try {
       switch ($source) {
         case self::SOURCE_PATCH:
@@ -1199,7 +1205,8 @@ EOTEXT
       return $message;
     }
     $prefix = idx($staging, 'prefix', 'phabricator');
-    $base_tag = "{$prefix}/base/{$id}";
+    $base_tag = $this->refProvider->getBaseRefName($prefix, $id);
+
     echo pht('Fetching base tag from staging remote')."\n";
     $err = phutil_passthru(
           'git fetch --tag -n %s %s',
