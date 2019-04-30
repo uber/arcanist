@@ -21,7 +21,7 @@ final class ArcanistDiffWorkflow extends ArcanistDiffBasedWorkflow {
   private $diffPropertyFutures = array();
   private $commitMessageFromRevision;
   private $hitAutotargets;
-  private $refProvider;
+  private $uberRefProvider;
 
   public function getWorkflowName() {
     return 'diff';
@@ -450,7 +450,7 @@ EOTEXT
 
   public function run() {
     $this->console = PhutilConsole::getConsole();
-    $this->refProvider = new UberRefProvider(
+    $this->uberRefProvider = new UberRefProvider(
       $this->configurationManager->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
     );
 
@@ -2989,8 +2989,12 @@ EOTEXT
     $commit = $api->getHeadCommit();
     $prefix = idx($staging, 'prefix', 'phabricator');
 
-    $base_tag = $this->refProvider->getBaseRefName($prefix, $id);
-    $diff_tag = $this->refProvider->getDiffRefName($prefix, $id);
+    $base_tag = "refs/tags/{$prefix}/base/{$id}";
+    $diff_tag = "refs/tags/{$prefix}/diff/{$id}";
+
+    // UBER CODE
+    $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
+    $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id);
 
     $this->writeOkay(
       pht('PUSH STAGING'),
