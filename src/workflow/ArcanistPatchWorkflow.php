@@ -12,7 +12,7 @@ final class ArcanistPatchWorkflow extends ArcanistDiffBasedWorkflow {
 
   private $source;
   private $sourceParam;
-  private $uberRefProvider;
+  private $uberRefProvider; // UBER CODE
 
   public function getWorkflowName() {
     return 'patch';
@@ -389,9 +389,11 @@ EOTEXT
   }
 
   public function run() {
+    // UBER CODE
     $this->uberRefProvider = new UberRefProvider(
       $this->configurationManager->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
     );
+    // UBER CODE END
 
     $source = $this->getSource();
     $param = $this->getSourceParam();
