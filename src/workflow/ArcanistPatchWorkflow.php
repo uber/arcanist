@@ -1198,6 +1198,7 @@ EOTEXT
     return $graph;
   }
 
+  // UBER CODE
   private function pullBaseTagFromStagingArea($id){
     list($success, $message, $staging, $staging_uri) = $this->validateStagingSetup();
     if (!$success) {
@@ -1205,7 +1206,7 @@ EOTEXT
     }
     $prefix = idx($staging, 'prefix', 'phabricator');
     $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
-    echo pht('Fetching base ref from staging remote')."\n";
+    echo pht('Fetching base ref "%s" from staging remote', $base_tag)."\n";
     $err = phutil_passthru(
           'git fetch --tag -n %s %s',
           $staging_uri,
@@ -1213,7 +1214,7 @@ EOTEXT
 
     if ($err) {
       $base_tag = "{$prefix}/base/{$id}";
-      echo pht('Fetching base tag from staging remote')."\n";
+      echo pht('Fetching base tag "%s" from staging remote', $base_tag)."\n";
       $err = phutil_passthru(
             'git fetch --tag -n %s %s',
             $staging_uri,
@@ -1225,4 +1226,5 @@ EOTEXT
     }
     return self::SUCCESS;
   }
+  // UBER CODE END
 }
