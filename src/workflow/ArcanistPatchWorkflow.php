@@ -395,7 +395,6 @@ EOTEXT
 
     $source = $this->getSource();
     $param = $this->getSourceParam();
-
     try {
       switch ($source) {
         case self::SOURCE_PATCH:
@@ -1205,9 +1204,7 @@ EOTEXT
       return $message;
     }
     $prefix = idx($staging, 'prefix', 'phabricator');
-
     $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
-
     echo pht('Fetching base ref from staging remote')."\n";
     $err = phutil_passthru(
           'git fetch --tag -n %s %s',

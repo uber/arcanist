@@ -2995,6 +2995,7 @@ EOTEXT
     // UBER CODE
     $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
     $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id);
+    // UBER CODE END
 
     $this->writeOkay(
       pht('PUSH STAGING'),
