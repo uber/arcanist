@@ -7,21 +7,27 @@ final class UberRefProvider {
         $this->are_custom_refs_enabled = $is_non_tag_ref_enabled;
     }
 
-    public function getBaseRefName($prefix, $id) {
+    public function getBaseRefName($prefix, $id, $current_value = null) {
         if ($this->are_custom_refs_enabled) {
             return "refs/{$prefix}/base/{$id}";
-        }
-        else {
-            return "refs/tags/{$prefix}/base/{$id}";
+        } else {
+            if ($current_value == null) {
+                return "refs/tags/{$prefix}/base/{$id}";
+            } else {
+                return $current_value;
+            }
         }
     }
 
-    public function getDiffRefName($prefix, $id) {
+    public function getDiffRefName($prefix, $id, $current_value = null) {
         if ($this->are_custom_refs_enabled) {
             return "refs/{$prefix}/diff/{$id}";
-        }
-        else {
-            return "refs/tags/{$prefix}/diff/{$id}";
+        } else {
+            if ($current_value == null) {
+                return "refs/tags/{$prefix}/diff/{$id}";
+            } else {
+                return $current_value;
+            }
         }
     }
 }

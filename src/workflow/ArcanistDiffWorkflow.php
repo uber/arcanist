@@ -2993,8 +2993,8 @@ EOTEXT
     $diff_tag = "refs/tags/{$prefix}/diff/{$id}";
 
     // UBER CODE
-    $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
-    $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id);
+    $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id, $base_tag);
+    $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id, $diff_tag);
     // UBER CODE END
 
     $this->writeOkay(
