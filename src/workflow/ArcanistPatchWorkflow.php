@@ -391,7 +391,7 @@ EOTEXT
   public function run() {
     // UBER CODE
     $this->uberRefProvider = new UberRefProvider(
-      $this->configurationManager->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
+      $this->getConfigurationManager()->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
     );
     // UBER CODE END
 
