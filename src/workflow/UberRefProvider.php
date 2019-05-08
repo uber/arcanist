@@ -3,7 +3,7 @@
 final class UberRefProvider {
     private $are_custom_refs_enabled;
 
-    function __construct(bool $is_non_tag_ref_enabled) {
+    function __construct($is_non_tag_ref_enabled) {
         $this->are_custom_refs_enabled = $is_non_tag_ref_enabled;
     }
 
