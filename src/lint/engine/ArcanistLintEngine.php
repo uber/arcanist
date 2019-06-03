@@ -473,6 +473,7 @@ abstract class ArcanistLintEngine extends Phobject {
     return $runnable;
   }
 
+  // UBER CODE
   private function executeLinters(array $runnable) {
     assert_instances_of($runnable, 'ArcanistLinter');
 
@@ -495,7 +496,6 @@ abstract class ArcanistLintEngine extends Phobject {
     $path_map = array_fuse($path_list);
 
     $exceptions = array();
-    $did_lint = array();
 
     $linter_id = $linter->getLinterID();
     $paths = $linter->getPaths();
@@ -557,6 +557,7 @@ abstract class ArcanistLintEngine extends Phobject {
 
     return $exceptions;
   }
+  // UBER CODE END
 
   private function beginLintServiceCall(ArcanistLinter $linter, array $paths) {
     $profiler = PhutilServiceProfiler::getInstance();
