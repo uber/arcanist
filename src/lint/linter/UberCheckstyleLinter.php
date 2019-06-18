@@ -81,6 +81,10 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
     return parent::setLinterConfigurationValue($key, $value);
   }
 
+  public function getChunkSizeLimit() {
+    return $this->maxFiles;
+  }
+
   /**
    * Check that the checkstyle libraries are installed.
    * @return void
