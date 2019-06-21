@@ -1587,7 +1587,12 @@ EOTEXT
     $repository_api = $this->getRepositoryAPI();
     $repository_api->execxLocal('checkout %s', $this->oldBranch);
     if ($this->isGit) {
-      $repository_api->execxLocal('submodule update --init --recursive');
+      list($out) = $repository_api->execxLocal(
+          'config --file .gitmodules --name-only --get-regexp path');
+      $haveSubmodules = strlen(trim($out));
+      if ($haveSubmodules) {
+          $repository_api->execxLocal('submodule update --init --recursive');
+      }
     }
     echo pht(
       "Switched back to %s %s.\n",
