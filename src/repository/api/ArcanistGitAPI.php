@@ -1604,6 +1604,6 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
       } catch (CommandException $ex) {
         return false;
       }
-      return strlen(trim($out));
+      return (bool)strlen(trim($out));
   }
 }
