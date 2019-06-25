@@ -99,7 +99,7 @@ class UberArcanistSubmitQueueEngine
       $this->getTargetRemote());
     $remoteUrl = trim($out);
 
-    list($out) = $api->execxLocal(
+    list(, $out) = $api->execManualLocal(
       'config --get remote.%s.pushurl',
       $this->getTargetRemote());
     $remotePushUrl = trim($out);
