@@ -1598,8 +1598,12 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
    * Check whether repository has submodules that need updating
    */
   public function uberHasGitSubmodules() {
+      try {
         list($out) = $this->execxLocal(
             'config --file .gitmodules --name-only --get-regexp path');
-        return strlen(trim($out));
+      } catch (CommandException $ex) {
+        return false;
+      }
+      return strlen(trim($out));
   }
 }
