@@ -1595,14 +1595,11 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
   }
 
   /**
-   * Recursively udpate submodules if we have any.
+   * Check whether repository has submodules that need updating
    */
-  public function uberUpdateGitSubmodules() {
+  public function uberHasGitSubmodules() {
         list($out) = $this->execxLocal(
             'config --file .gitmodules --name-only --get-regexp path');
-        $haveSubmodules = strlen(trim($out));
-        if ($haveSubmodules) {
-            $this->execxLocal('submodule update --init --recursive');
-        }
+        return strlen(trim($out));
   }
 }
