@@ -35,12 +35,7 @@ class ArcanistGitLandEngine
         $this->reconcileLocalState();
 
         $api = $this->getRepositoryAPI();
-        list($out) = $api->execxLocal(
-            'config --file .gitmodules --name-only --get-regexp path');
-        $haveSubmodules = strlen(trim($out));
-        if ($haveSubmodules) {
-            $api->execxLocal('submodule update --init --recursive');
-        }
+        $api->uberUpdateGitSubmodules();
 
         if ($this->getShouldKeep()) {
           echo tsprintf(
@@ -531,13 +526,7 @@ class ArcanistGitLandEngine
 
     $api->execxLocal('checkout %s --', $this->localRef);
     $api->execxLocal('reset --hard %s --', $this->localCommit);
-
-    list($out) = $api->execxLocal(
-        'config --file .gitmodules --name-only --get-regexp path');
-    $haveSubmodules = strlen(trim($out));
-    if ($haveSubmodules) {
-        $api->execxLocal('submodule update --init --recursive');
-    }
+    $api->uberUpdateGitSubmodules();
 
     $this->restoreWhenDestroyed = false;
   }
