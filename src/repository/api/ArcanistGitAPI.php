@@ -1611,16 +1611,15 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
    * Get the remote push url for a repository
    */
   public function uberGetGitRemotePushUrl($remote) {
-    list($out) = $api->execxLocal(
-      'config --get remote.%s.url',
-      $remote);
-    $pushUrl = trim($out);
     try {
       list($out) = $api->execxLocal(
           'config --get remote.%s.pushurl',
           $remote);
-      $pushUrl = trim($out);
+      return trim($out);
     } catch (CommandException $ex) {}
-    return $pushUrl;
+    list($out) = $api->execxLocal(
+      'config --get remote.%s.url',
+      $remote);
+    return trim($out);
   }
 }
