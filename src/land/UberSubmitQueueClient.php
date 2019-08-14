@@ -33,7 +33,7 @@ final class UberSubmitQueueClient extends Phobject {
         if ($shouldShadow) {
           $params['shouldShadow'] = "true";
         }
-        return $this->callMethodSynchronous("POST", "v2/requests", $params);
+        return $this->callMethodSynchronous("POST", "/v2/requests", $params);
     }
 
   public function submitMergeStackRequest($remoteUrl, $stack, $shouldShadow, $targetOnto) {
@@ -46,7 +46,7 @@ final class UberSubmitQueueClient extends Phobject {
     if ($shouldShadow) {
       $params['shouldShadow'] = "true";
     }
-    return $this->callMethodSynchronous("POST", "v2/requests", $params);
+    return $this->callMethodSynchronous("POST", "/v2/requests", $params);
   }
 
     private function callMethodSynchronous($method, $api, array $params) {
