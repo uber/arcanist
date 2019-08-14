@@ -127,6 +127,14 @@ EOTEXT
           'update' => true,
         ),
       ),
+      'uber-merge-using-staging-tag' => array(
+        'supports' => array('git'),
+        'help' => pht(
+          'Merge from a branch'),
+        'conflicts' => array(
+          'update' => true,
+        ),
+      ),
       'force' => array(
         'help' => pht('Do not run any sanity checks.'),
       ),
@@ -235,6 +243,11 @@ EOTEXT
 
   private function shouldUseStagingGitTags() {
     $allow_tags = $this->getArgument('uber-use-staging-git-tags', false);
+    return $allow_tags;
+  }
+
+  private function shouldMergeUsingStagingGitTag() {
+    $allow_tags = $this->getArgument('uber-merge-using-staging-tag', false);
     return $allow_tags;
   }
 
@@ -423,6 +436,9 @@ EOTEXT
         case self::SOURCE_DIFF:
           if ($this->shouldUseStagingGitTags()) {
             $this->pullBaseTagFromStagingArea($param);
+          }
+          if ($this->shouldMergeUsingStagingGitTag()) {
+            $this->mergeBaseTagFromStagingArea($param);
           }
           $bundle = $this->loadDiffBundleFromConduit(
             $this->getConduit(),
@@ -1226,6 +1242,44 @@ EOTEXT
             pht('Unable to pull tag from the staging area but proceeding !!'));
       }
     }
+    return self::SUCCESS;
+  }
+
+  private function fetchBaseTagFromStagingArea($staging_uri, $base_tag) {
+    echo pht('Fetching base ref "%s" from staging remote', $base_tag)."\n";
+    $err = phutil_passthru(
+      'git fetch --tag -n %s %s',
+      $staging_uri,
+      $base_tag);
+    return $err;
+  }
+
+  private function mergeBaseTagFromStagingArea($id){
+    list($success, $message, $staging, $staging_uri) = $this->validateStagingSetup();
+    if (!$success) {
+      return $message;
+    }
+    $prefix = idx($staging, 'prefix', 'phabricator');
+    $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
+    $err = $this->fetchBaseTagFromStagingArea($staging_uri, $base_tag);
+    if ($err) {
+      $base_tag = "{$prefix}/base/{$id}";
+      $err = $this->fetchBaseTagFromStagingArea($staging_uri, $base_tag);
+      if ($err) {
+        $this->writeWarn(pht('STAGING TAG PULL FAILED'),
+          pht('Unable to pull tag from the staging area but proceeding !!'));
+      }
+    }
+    echo pht('Merging branch %s', $base_tag)."\n";
+    $err = phutil_passthru(
+      'git merge %s',
+      $base_tag);
+    if ($err) {
+      $this->writeWarn(pht('MERGE FROM BRANCH FAILED'),
+        pht('Unable to merge branch!!'));
+      return 'merge.failed';
+    }
+
     return self::SUCCESS;
   }
   // UBER CODE END
