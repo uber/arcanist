@@ -434,12 +434,11 @@ EOTEXT
             $param);
           break;
         case self::SOURCE_DIFF:
-          if ($this->shouldUseStagingGitTags()) {
-            $this->pullBaseTagFromStagingArea($param);
-          }
           if ($this->shouldMergeUsingStagingGitTag()) {
             $this->mergeBaseTagFromStagingArea($param);
-          }
+          } elseif ($this->shouldUseStagingGitTags()) {
+              $this->pullBaseTagFromStagingArea($param);
+            }
           $bundle = $this->loadDiffBundleFromConduit(
             $this->getConduit(),
             $param);
@@ -517,8 +516,9 @@ EOTEXT
           $original_branch = $repository_api->getCanonicalRevisionName('.');
         }
       }
-
-      $new_branch = $this->createBranch($bundle, $has_base_revision);
+      if (!$this->shouldMergeUsingStagingGitTag()) {
+        $new_branch = $this->createBranch($bundle, $has_base_revision);
+      }
     }
     if (!$has_base_revision && $this->shouldApplyDependencies()) {
       $this->applyDependencies($bundle);
@@ -1270,10 +1270,15 @@ EOTEXT
           pht('Unable to pull tag from the staging area but proceeding !!'));
       }
     }
-    echo pht('Merging branch %s', $base_tag)."\n";
+    echo pht('Creating branch %s', $base_tag)."\n";
     $err = phutil_passthru(
-      'git merge %s',
-      $base_tag);
+      'git checkout -b %s',
+      "diff-{$id}");
+
+    echo pht('Rebase with master %s', $base_tag)."\n";
+    $err = phutil_passthru(
+      'git rebase origin/master ');
+
     if ($err) {
       $this->writeWarn(pht('MERGE FROM BRANCH FAILED'),
         pht('Unable to merge branch!!'));
