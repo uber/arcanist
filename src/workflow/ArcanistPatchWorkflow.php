@@ -130,9 +130,11 @@ EOTEXT
       'uber-merge-using-staging-tag' => array(
         'supports' => array('git'),
         'help' => pht(
-          'Merge from a branch'),
+          'A new branch (git) is created and then '.
+          'the patch is applied, committed and merged in the new branch.'),
         'conflicts' => array(
           'update' => true,
+          'uber-use-staging-git-tags' => true,
         ),
       ),
       'force' => array(
@@ -435,7 +437,7 @@ EOTEXT
           break;
         case self::SOURCE_DIFF:
           if ($this->shouldMergeUsingStagingGitTag()) {
-            $this->mergeBaseTagFromStagingArea($param);
+            $this->fetchTagFromStagingArea($param);
           } elseif ($this->shouldUseStagingGitTags()) {
               $this->pullBaseTagFromStagingArea($param);
             }
@@ -516,9 +518,7 @@ EOTEXT
           $original_branch = $repository_api->getCanonicalRevisionName('.');
         }
       }
-      if (!$this->shouldMergeUsingStagingGitTag()) {
-        $new_branch = $this->createBranch($bundle, $has_base_revision);
-      }
+      $new_branch = $this->createBranch($bundle, $has_base_revision);
     }
     if (!$has_base_revision && $this->shouldApplyDependencies()) {
       $this->applyDependencies($bundle);
@@ -832,10 +832,12 @@ EOTEXT
         try {
           if ($this->shouldUseMerge()) {
             $repository_api->execxLocal('cherry-pick --keep-redundant-commits %s', $new_branch);
+          } elseif($this->shouldMergeUsingStagingGitTag()) {
+             $repository_api->execxLocal('merge %s', $new_branch);
           } else {
             /* $repository_api->execxLocal('cherry-pick %s', $new_branch); */
             // TODO Check if this works.
-            $repository_api->execxLocal('cherry-pick -- %s', $new_branch);
+              $repository_api->execxLocal('cherry-pick -- %s', $new_branch);
           }
           $repository_api->execPassthru('submodule update --init --recursive');
         } catch (Exception $ex) {
@@ -1245,46 +1247,32 @@ EOTEXT
     return self::SUCCESS;
   }
 
-  private function fetchBaseTagFromStagingArea($staging_uri, $base_tag) {
-    echo pht('Fetching base ref "%s" from staging remote', $base_tag)."\n";
+  private function fetchTagFromStagingArea($id){
+    list($success,
+      $message, $staging, $staging_uri) = $this->validateStagingSetup();
+    if (!$success) {
+      throw new ArcanistUsageException(pht($message));
+    }
+    $prefix = idx($staging, 'prefix', 'phabricator');
+    $diff_tag = "{$prefix}/diff/{$id}";
+    echo pht('Fetching diff ref "%s" from staging remote', $diff_tag)."\n";
     $err = phutil_passthru(
       'git fetch --tag -n %s %s',
       $staging_uri,
-      $base_tag);
-    return $err;
-  }
-
-  private function mergeBaseTagFromStagingArea($id){
-    list($success, $message, $staging, $staging_uri) = $this->validateStagingSetup();
-    if (!$success) {
-      return $message;
-    }
-    $prefix = idx($staging, 'prefix', 'phabricator');
-    $base_tag = $this->uberRefProvider->getBaseRefName($prefix, $id);
-    $err = $this->fetchBaseTagFromStagingArea($staging_uri, $base_tag);
+      $diff_tag);
     if ($err) {
-      $base_tag = "{$prefix}/base/{$id}";
-      $err = $this->fetchBaseTagFromStagingArea($staging_uri, $base_tag);
-      if ($err) {
-        $this->writeWarn(pht('STAGING TAG PULL FAILED'),
-          pht('Unable to pull tag from the staging area but proceeding !!'));
-      }
+      $this->writeWarn(pht('STAGING TAG PULL FAILED'),
+        pht('Unable to pull tag from the staging area but proceeding !!'));
     }
-    echo pht('Creating branch %s', $base_tag)."\n";
+    echo pht('Creating branch %s', $diff_tag)."\n";
     $err = phutil_passthru(
       'git checkout -b %s',
       "diff-{$id}");
 
-    echo pht('Rebase with master %s', $base_tag)."\n";
-    $err = phutil_passthru(
-      'git rebase origin/master ');
-
     if ($err) {
-      $this->writeWarn(pht('MERGE FROM BRANCH FAILED'),
-        pht('Unable to merge branch!!'));
-      return 'merge.failed';
+      $this->writeWarn(pht('CREATING LOCAL BRANCH FAILED'),
+        pht('failed to create branch !!'));
     }
-
     return self::SUCCESS;
   }
   // UBER CODE END
