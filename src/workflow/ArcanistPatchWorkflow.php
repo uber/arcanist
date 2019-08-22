@@ -437,8 +437,10 @@ EOTEXT
           break;
         case self::SOURCE_DIFF:
           if ($this->shouldMergeUsingStagingGitTag()) {
-            $this->fetchTagFromStagingArea($param);
-          } elseif ($this->shouldUseStagingGitTags()) {
+            $this->mergeBranchFromStagingArea($param);
+            return 0;
+          } else
+            if ($this->shouldUseStagingGitTags()) {
               $this->pullBaseTagFromStagingArea($param);
             }
           $bundle = $this->loadDiffBundleFromConduit(
@@ -456,7 +458,6 @@ EOTEXT
         throw $ex;
       }
     }
-
     $try_encoding = nonempty($this->getArgument('encoding'), null);
     if (!$try_encoding) {
       if ($this->requiresConduit()) {
@@ -832,8 +833,6 @@ EOTEXT
         try {
           if ($this->shouldUseMerge()) {
             $repository_api->execxLocal('cherry-pick --keep-redundant-commits %s', $new_branch);
-          } elseif($this->shouldMergeUsingStagingGitTag()) {
-             $repository_api->execxLocal('merge %s', $new_branch);
           } else {
             /* $repository_api->execxLocal('cherry-pick %s', $new_branch); */
             // TODO Check if this works.
@@ -1247,31 +1246,29 @@ EOTEXT
     return self::SUCCESS;
   }
 
-  private function fetchTagFromStagingArea($id){
+  private function mergeBranchFromStagingArea($id){
     list($success,
       $message, $staging, $staging_uri) = $this->validateStagingSetup();
     if (!$success) {
       throw new ArcanistUsageException(pht($message));
     }
     $prefix = idx($staging, 'prefix', 'phabricator');
-    $diff_tag = "{$prefix}/diff/{$id}";
+    $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id);
     echo pht('Fetching diff ref "%s" from staging remote', $diff_tag)."\n";
+    // https://stackoverflow.com/questions/41813643/why-is-git-fetch-not-fetching-any-tags
     $err = phutil_passthru(
-      'git fetch --tag -n %s %s',
+      'git fetch --tag -n %s %s:%s',
       $staging_uri,
-      $diff_tag);
+      $diff_tag, $diff_tag);
     if ($err) {
       $this->writeWarn(pht('STAGING TAG PULL FAILED'),
         pht('Unable to pull tag from the staging area but proceeding !!'));
     }
-    echo pht('Creating branch %s', $diff_tag)."\n";
-    $err = phutil_passthru(
-      'git checkout -b %s',
-      "diff-{$id}");
-
+    $err = phutil_passthru('git merge --no-ff %s --no-edit', $diff_tag);
     if ($err) {
-      $this->writeWarn(pht('CREATING LOCAL BRANCH FAILED'),
-        pht('failed to create branch !!'));
+      $this->writeWarn(pht('MERGE TAG FAILED'),
+        pht('Unable to merge tag'));
+      throw new ArcanistUsageException(pht($message));
     }
     return self::SUCCESS;
   }
