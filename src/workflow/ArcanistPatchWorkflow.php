@@ -130,8 +130,7 @@ EOTEXT
       'uber-merge-using-staging-tag' => array(
         'supports' => array('git'),
         'help' => pht(
-          'A new branch (git) is created and then '.
-          'the patch is applied, committed and merged in the new branch.'),
+          'Fetch the staging tag and merge.'),
         'conflicts' => array(
           'update' => true,
           'uber-use-staging-git-tags' => true,
