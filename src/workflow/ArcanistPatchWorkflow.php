@@ -438,8 +438,7 @@ EOTEXT
           if ($this->shouldMergeUsingStagingGitTag()) {
             $this->mergeBranchFromStagingArea($param);
             return 0;
-          } else
-            if ($this->shouldUseStagingGitTags()) {
+          } elseif ($this->shouldUseStagingGitTags()) {
               $this->pullBaseTagFromStagingArea($param);
             }
           $bundle = $this->loadDiffBundleFromConduit(
@@ -835,7 +834,7 @@ EOTEXT
           } else {
             /* $repository_api->execxLocal('cherry-pick %s', $new_branch); */
             // TODO Check if this works.
-              $repository_api->execxLocal('cherry-pick -- %s', $new_branch);
+            $repository_api->execxLocal('cherry-pick -- %s', $new_branch);
           }
           $repository_api->execPassthru('submodule update --init --recursive');
         } catch (Exception $ex) {
