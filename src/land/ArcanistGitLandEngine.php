@@ -475,7 +475,9 @@ class ArcanistGitLandEngine
 
   protected function destroyLocalBranch() {
     $api = $this->getRepositoryAPI();
-    if ($this->getSourceRef() == $this->getTargetOnto()) {
+    $source_ref = $this->getSourceRef();
+
+    if ($source_ref == $this->getTargetOnto()) {
       // If we landed a branch into a branch with the same name, so don't
       // destroy it. This prevents us from cleaning up "master" if you're
       // landing master into itself.
@@ -484,20 +486,32 @@ class ArcanistGitLandEngine
 
     // TODO: Maybe this should also recover the proper upstream?
 
+    // See T10321. If we were not landing a branch, don't try to clean it up.
+    // This happens most often when landing from a detached HEAD.
+    $is_branch = $this->isBranch($source_ref);
+    if (!$is_branch) {
+      echo tsprintf(
+        "%s\n",
+        pht(
+          '(Source "%s" is not a branch, leaving working copy as-is.)',
+          $source_ref));
+      return;
+    }
+
     $recovery_command = csprintf(
       'git checkout -b %R %R',
-      $this->getSourceRef(),
+      $source_ref,
       $this->sourceCommit);
 
     echo tsprintf(
       "%s\n",
-      pht('Cleaning up branch "%s"...', $this->getSourceRef()));
+      pht('Cleaning up branch "%s"...', $source_ref));
 
     echo tsprintf(
       "%s\n",
       pht('(Use `%s` if you want it back.)', $recovery_command));
 
-    $api->execxLocal('branch -D -- %s', $this->getSourceRef());
+    $api->execxLocal('branch -D -- %s', $source_ref);
   }
 
   /**
@@ -593,6 +607,16 @@ class ArcanistGitLandEngine
       pht(
         'Local branches have not been changed, and are still in exactly the '.
         'same state as before.'));
+  }
+
+  private function isBranch($ref) {
+    $api = $this->getRepositoryAPI();
+
+    list($err) = $api->execManualLocal(
+      'show-ref --verify --quiet -- %R',
+      'refs/heads/'.$ref);
+
+    return !$err;
   }
 
 }
