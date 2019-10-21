@@ -157,18 +157,7 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
     return $this->revisions;
   }
 
-  protected function loadRevisions(array $branches) {
-    $ids = array();
-    $hashes = array();
-
-    foreach ($branches as $branch) {
-      if ($branch['revisionID']) {
-        $ids[] = $branch['revisionID'];
-      }
-      $hashes[] = array('gtcm', $branch['hash']);
-      $hashes[] = array('gttr', $branch['tree']);
-    }
-
+  protected function integrator_flow_emulator($ids=array(), $phids=array(), $hashes=array(), $needActiveDiff=false) {
     $futures = array();
     if ($ids) {
       $futures[] = $this->getConduit()
@@ -181,6 +170,12 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
                      array('commitHashes' => $hashes))->start();
     }
 
+   if ($phids) {
+      $futures[] = $this->getConduit()
+        ->callMethod('differential.query',
+                     array('phids' => $phids))->start();
+    }
+
     $results = array();
     foreach ($futures as $future) {
       foreach ($future->resolve() as $value) {
@@ -188,7 +183,32 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
       }
     }
 
+    if ($needActiveDiff) {
+      $all_diffs = array();
+      foreach ($results as $key => $value) {
+        $all_diffs[]=$value['diffs'][0];
+      }
+      $diffs = $this->getConduit()->callMethodSynchronous('differential.querydiffs', array('ids' => $all_diffs));
+      foreach ($results as $key => $value) {
+        $results[$key]['activeDiff'] = $diffs[$value['diffs'][0]];
+      }
+    }
+
     return $results;
+  }
+
+  protected function loadRevisions(array $branches) {
+    $ids = array();
+    $hashes = array();
+
+    foreach ($branches as $branch) {
+      if ($branch['revisionID']) {
+        $ids[] = $branch['revisionID'];
+      }
+      $hashes[] = array('gtcm', $branch['hash']);
+      $hashes[] = array('gttr', $branch['tree']);
+    }
+    return $this->integrator_flow_emulator($ids, array(), $hashes);
   }
 
   protected function checkoutBranch($name, $silent = false) {
