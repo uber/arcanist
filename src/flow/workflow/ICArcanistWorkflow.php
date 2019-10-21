@@ -157,7 +157,9 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
     return $this->revisions;
   }
 
-  protected function integrator_flow_emulator($ids=array(), $phids=array(), $hashes=array(), $needActiveDiff=false) {
+  protected function integratorFlowEmulator($ids = array(), $phids = array(),
+                                              $hashes = array(),
+                                              $need_active_diff = false) {
     $futures = array();
     if ($ids) {
       $futures[] = $this->getConduit()
@@ -183,12 +185,14 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
       }
     }
 
-    if ($needActiveDiff) {
+    if ($need_active_diff) {
       $all_diffs = array();
       foreach ($results as $key => $value) {
-        $all_diffs[]=$value['diffs'][0];
+        $all_diffs[] = $value['diffs'][0];
       }
-      $diffs = $this->getConduit()->callMethodSynchronous('differential.querydiffs', array('ids' => $all_diffs));
+      $diffs = $this->getConduit()
+        ->callMethodSynchronous('differential.querydiffs',
+                                array('ids' => $all_diffs));
       foreach ($results as $key => $value) {
         $results[$key]['activeDiff'] = $diffs[$value['diffs'][0]];
       }
@@ -208,7 +212,7 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
       $hashes[] = array('gtcm', $branch['hash']);
       $hashes[] = array('gttr', $branch['tree']);
     }
-    return $this->integrator_flow_emulator($ids, array(), $hashes);
+    return $this->integratorFlowEmulator($ids, array(), $hashes);
   }
 
   protected function checkoutBranch($name, $silent = false) {

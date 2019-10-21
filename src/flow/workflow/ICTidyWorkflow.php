@@ -20,23 +20,26 @@ EOTEXT
   public function getCommandHelp() {
     return phutil_console_format(<<<EOTEXT
 
-          Performs branch cleanup on your local working copy using revision metadata from the
-          remote install.  It follows a series of steps in order:
+          Performs branch cleanup on your local working copy using revision
+          metadata from the remote install.  It follows a series of steps
+          in order:
 
             - recover
               Graft branches whose upstreams have been deleted onto master.
             - prune
-              Delete branches whose corresponding differential revisions have been deleted, then
-              graft any children of those branches onto the nearest remaining upstream parent.
+              Delete branches whose corresponding differential revisions have
+              been deleted, then graft any children of those branches onto the
+              nearest remaining upstream parent.
             - garbage collection
               Optimizes local repository.
 
           Garbage collection comes in two forms:
             - auto
-              Executes by default.  Faster but less thorough.  Adjust the `gc.auto` parameter
-              in your git config to control threshold.
+              Executes by default.  Faster but less thorough.  Adjust the
+              `gc.auto` parameter in your git config to control threshold.
             - aggressive
-              More aggressively optimize the repository at the expense of taking much more time.
+              More aggressively optimize the repository at the expense of
+              taking much more time.
               This is recommended every few hundred changesets.
 
             See https://git-scm.com/docs/git-gc for full documentation.
@@ -46,26 +49,27 @@ EOTEXT
   }
 
   public function getArguments() {
-    return [
-      'aggressive' => [
-        'help' => pht("Perform thorough repository optimization."),
-      ],
-      'skip-recover' => [
+    return array(
+      'aggressive' => array(
+        'help' => pht('Perform thorough repository optimization.'),
+      ),
+      'skip-recover' => array(
         'help' => pht("Don't reattach dangling branches."),
-      ],
-      'skip-prune' => [
-        'help' => pht("Don't delete branches whose revisions are closed or abandoned."),
-      ],
-      'skip-prune-closed' => [
+      ),
+      'skip-prune' => array(
+        'help' => pht("Don't delete branches whose revisions are closed or ".
+                      "abandoned."),
+      ),
+      'skip-prune-closed' => array(
         'help' => pht("Don't delete branches whose revisions are closed."),
-      ],
-      'prune-abandoned' => [
+      ),
+      'prune-abandoned' => array(
         'help' => pht('Delete branches whose revisions are abandoned.'),
-      ],
-      'force' => [
+      ),
+      'force' => array(
         'help' => pht('Do not run any sanity checks.'),
-      ],
-    ];
+      ),
+    );
   }
 
   public function run() {
@@ -81,9 +85,9 @@ EOTEXT
     $git = $this->getRepositoryAPI();
     $graph = $this->loadGitBranchGraph();
 
-    $deleted = [];
-    $closed = [];
-    $abandoned = [];
+    $deleted = array();
+    $closed = array();
+    $abandoned = array();
     foreach ($graph->getNodesInTopologicalOrder() as $branch_name) {
       if ($printed_branches[$branch_name]['status'] == 'Deleted') {
         $deleted[] = $branch_name;
@@ -100,8 +104,9 @@ EOTEXT
     }
 
     if (!$skip_recover && $deleted && $this->consoleConfirm(tsprintf(
-        'The branches listed as <fg:red>Deleted</fg> no longer exist and their child branches '.
-        "are orphaned.\n\nAttach these orphaned branches to 'master'?"))) {
+        'The branches listed as <fg:red>Deleted</fg> no longer exist and '.
+        "their child branches are orphaned.\n\nAttach these orphaned branches ".
+        "to 'master'?"))) {
       foreach ($deleted as $deleted_branch) {
         $parent = $graph->getUpstream($deleted_branch);
         foreach ($graph->getDownstreams($deleted_branch) as $orphaned_branch) {
@@ -113,10 +118,12 @@ EOTEXT
       }
     }
 
-    if (!$skip_prune && !$skip_prune_closed && $closed && $this->consoleConfirm(tsprintf(
-        'The branches listed as <fg:cyan>Closed</fg> correspond to differential revisions which '.
-        'have been closed and can be automatically deleted from your working copy.'.
-        "\n\nDelete these branches?"))) {
+    if (!$skip_prune && !$skip_prune_closed && $closed &&
+        $this->consoleConfirm(tsprintf(
+          'The branches listed as <fg:cyan>Closed</fg> correspond to '.
+          'differential revisions which have been closed and can be '.
+          'automatically deleted from your working copy.'.
+          "\n\nDelete these branches?"))) {
       if (array_search($git->getBranchName(), $closed) !== false) {
         $git->execxLocal('checkout master');
       }
@@ -127,9 +134,9 @@ EOTEXT
     // You must explicitly ask for abandoned revisions to be removed since it's
     // not unlikely for someone to want to repurpose an abandoned revision.
     if ($prune_abandoned && $abandoned && $this->consoleConfirm(tsprintf(
-        'The branches listed as Abandoned correspond to differential revisions which '.
-        'have been abandoned and can be automatically deleted from your working copy.'.
-        "\n\nDelete these branches?"))) {
+        'The branches listed as Abandoned correspond to differential '.
+        'revisions which have been abandoned and can be automatically deleted '.
+        "from your working copy. \n\nDelete these branches?"))) {
       if (array_search($git->getBranchName(), $abandoned) !== false) {
         $git->execxLocal('checkout master');
       }

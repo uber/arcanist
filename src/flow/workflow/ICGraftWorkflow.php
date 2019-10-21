@@ -22,23 +22,21 @@ EOTEXT
   }
 
   public function getCommandHelp() {
-    return phutil_console_format(<<<EOTEXT
-
-          Grafts __revision__ and its dependencies (if any) onto your working tree.
-EOTEXT
-      );
+    return phutil_console_format("\n".
+      "Grafts __revision__ and its dependencies (if any) onto your working ".
+      "tree.\n");
   }
 
   public function getArguments() {
-    return [
+    return array(
       '*' => 'revision',
-      'force' => [
+      'force' => array(
         'help' => pht('Do not run any sanity checks.'),
-      ],
-      'skip-landed' => [
+      ),
+      'skip-landed' => array(
         'help' => pht('Do not try to patch landed/closed diffs.'),
-      ],
-    ];
+      ),
+    );
   }
 
   public function run() {
@@ -47,39 +45,44 @@ EOTEXT
     $force = $this->getArgument('force', false);
     $skip = $this->getArgument('skip-landed', false);
     $revision_name = trim((string)idx($this->getArgument('revision'), 0));
-    $id_matches = [];
+    $id_matches = array();
     preg_match('/^D(?P<id>[1-9]\d*)$/i', $revision_name, $id_matches);
     if (!$revision_id = (int)idx($id_matches, 'id')) {
       throw new ArcanistUsageException(
         'You must provide a revision (eg D123) as an argument.');
     }
-    $revision = $this->integrator_flow_emulator(array($revision_id));
+    $revision = $this->integratorFlowEmulator(array($revision_id));
     $revision = head($revision);
     if (!$revision) {
-      throw new ArcanistUsageException(pht('No revision "%s" found.', $revision_name));
+      throw new ArcanistUsageException(pht('No revision "%s" found.',
+                                           $revision_name));
     }
 
     if (!$graph = $this->buildDependencyGraph($revision_id)) {
-      $this->graftRevisions([$revision], $force);
+      $this->graftRevisions(array($revision), $force);
       return 0;
     }
     $nodes = $graph->getNodes();
     foreach ($nodes as $phid => $depends_on_phids) {
       if (count($depends_on_phids) > 1) {
         throw new ArcanistUsageException(
-          pht('A differential revision present in the parent dependency graph for the chosen '.
-              'revision directly depends on multiple revisions, indicating that it has been '.
-              'managed by a process other than arc sync.'));
+          pht('A differential revision present in the parent dependency graph '.
+              'for the chosen revision directly depends on multiple '.
+              'revisions, indicating that it has been managed by a process '.
+              'other than arc sync.'));
       }
     }
     $sorted_node_indexes = array_reverse($graph->getNodesInTopologicalOrder());
-    $revisions = $this->integrator_flow_emulator(array(), $sorted_node_indexes, array(), true);
+    $revisions = $this->integratorFlowEmulator(
+      array(), $sorted_node_indexes, array(), true);
     $revisions = ipull($revisions, null, 'phid');
-    $ordered_revisions = [];
+    $ordered_revisions = array();
     foreach ($sorted_node_indexes as $node_index) {
-      $rid = idxv($revisions, [$node_index, 'id']);
+      $rid = idxv($revisions, array($node_index, 'id'));
       if ($git_api->doesRevisionExistInLog($rid) && $skip) {
-            echo phutil_console_format(pht("**D%s** is already present in your working copy, skipping...\n", $rid));
+            echo phutil_console_format(pht('**D%s** is already present in '.
+                                           "your working copy, skipping...\n",
+                                           $rid));
             continue;
           }
       $ordered_revisions[] = $revisions[$node_index];
@@ -98,12 +101,12 @@ EOTEXT
       }
       $branch_name = $this->generateBranchName($base_branch_name);
       $this->checkoutBranch($branch_name, true);
-      $patch_args = [
+      $patch_args = array(
         '--revision',
         $id,
         '--nobranch',
         '--skip-dependencies',
-      ];
+      );
       if ($force) {
         array_push($patch_args, '--force');
       }
@@ -115,16 +118,15 @@ EOTEXT
   protected function loadDiffs(array $revisions) {
     $git = $this->getRepositoryAPI();
     $diffs = ipull($revisions, 'activeDiff', 'activeDiffPHID');
-    $calls = [];
+    $calls = array();
     foreach ($diffs as $diff_phid => $diff) {
       $diff_id = idx($diff, 'id');
       $scratch_filename = "$diff_phid.diff";
       $scratch_path = $git->getScratchFilePath($scratch_filename);
       $diffs[$diff_phid]['rawDiffScratchFilename'] = $scratch_filename;
       if (!Filesystem::pathExists($scratch_path)) {
-        $calls[$diff_phid] = $this->getConduit()->callMethod('differential.getrawdiff', [
-          'diffID' => $diff_id,
-        ]);
+        $calls[$diff_phid] = $this->getConduit()
+          ->callMethod('differential.getrawdiff', array('diffID' => $diff_id));
       }
     }
 
