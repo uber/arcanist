@@ -52,10 +52,10 @@ EOTEXT
 
   public function getCommandHelp() {
     return phutil_console_format(<<<EOTEXT
-          Supports: git, hg
+          Supports: git, git/p4, hg
 
           Publish an accepted revision after review. This command is the last
-          step in the standard Differential pre-publish code review workflow.
+          step in the standard Differential code review workflow.
 
           This command merges and pushes changes associated with an accepted
           revision that are currently sitting in __ref__, which is usually the
@@ -64,6 +64,9 @@ EOTEXT
 
           Under Git: branches, tags, and arbitrary commits (detached HEADs)
           may be landed.
+
+          Under Git/Perforce: branches, tags, and arbitrary commits may
+          be submitted.
 
           Under Mercurial: branches and bookmarks may be landed, but only
           onto a target of the same type. See T3855.
@@ -74,7 +77,8 @@ EOTEXT
           A target branch is selected by examining these sources in order:
 
             - the **--onto** flag;
-            - the upstream of the current branch, recursively (Git only);
+            - the upstream of the branch targeted by the land operation,
+              recursively (Git only);
             - the __arc.land.onto.default__ configuration setting;
             - or by falling back to a standard default:
               - "master" in Git;
@@ -84,6 +88,8 @@ EOTEXT
 
             - the **--remote** flag;
             - the upstream of the current branch, recursively (Git only);
+            - the special "p4" remote which indicates a repository has
+              been synchronized with Perforce (Git only);
             - or by falling back to a standard default:
               - "origin" in Git;
               - the default remote in Mercurial.
@@ -167,7 +173,7 @@ EOTEXT
       'remote' => array(
         'param' => 'origin',
         'help' => pht(
-          "Push to a remote other than the default ('origin' in git)."),
+          'Push to a remote other than the default.'),
       ),
       'merge' => array(
         'help' => pht(
