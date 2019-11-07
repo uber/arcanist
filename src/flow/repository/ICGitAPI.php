@@ -101,10 +101,6 @@ final class ICGitAPI extends Phobject {
     }
   }
 
-  public function setBaseCommit($symbolic_commit) {
-    return $this->setBaseCommit($symbolic_commit);
-  }
-
   public function getGitCommitLog($base, $head) {
     list($stdout) = $this->api->execxLocal(
       'log --first-parent --format=medium %s..%s',
