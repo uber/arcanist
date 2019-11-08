@@ -90,6 +90,11 @@ EOTEXT
     $abandoned = array();
     $orphaned = $this->loadBrokenBranches();
     foreach ($graph->getNodesInTopologicalOrder() as $branch_name) {
+      if ($printed_branches[$branch_name]['behind']) {
+        $this->writeWarn('WARNING',
+          phutil_console_format("Branch %s is behind it's upstream skipping ".
+                                "tiding, run `arc cascade`", $branch_name));
+      }
       if ($printed_branches[$branch_name]['status'] == 'Deleted') {
         $deleted[] = $branch_name;
       }
