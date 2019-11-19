@@ -370,15 +370,14 @@ EOTEXT
             ->setSubmitQueueTags($this->submitQueueTags)
             ->setSkipUpdateWorkingCopy($this->getArgument('uber-skip-update'))
             ->setBuildMessageCallback(array($this, 'uberBuildEngineMessage'));
-      } else { // UBER CODE
+      }
+      // The goal here is to raise errors with flags early (which is cheap),
+      // before we test if the working copy is clean (which can be slow). This
+      // could probably be structured more cleanly.
 
-        // The goal here is to raise errors with flags early (which is cheap),
-        // before we test if the working copy is clean (which can be slow). This
-        // could probably be structured more cleanly.
+      $engine->parseArguments();
 
-        $engine->parseArguments();
-        $this->requireCleanWorkingCopy();
-      } // UBER CODE END
+      $this->requireCleanWorkingCopy();
       $engine->execute();
 
       if (!$should_hold && !$this->preview) {
