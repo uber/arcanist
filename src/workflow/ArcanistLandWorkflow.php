@@ -990,7 +990,7 @@ EOTEXT
           $paths->addItems($group['paths']);
 
           $block->addParagraph($suggestion);
-          $block->addParagraph(pht('Unreviewed paths:'));
+          $block->addParagraph(pht('Unreviewed paths (not necessary all):'));
           $block->addList($paths);
           $console = PhutilConsole::getConsole();
           $console->writeOut("\n");
