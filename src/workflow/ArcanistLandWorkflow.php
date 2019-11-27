@@ -942,6 +942,81 @@ EOTEXT
         pht('Accepted'));
     }
 
+    // Check if all paths were reviewed by reviewers listed on METADATA files.
+    // If this check throws an exception - silently pass.
+    try {
+      $uber_metadata_unreviewed_paths = $this->getConduit()->callMethodSynchronous(
+        'uber_metadata.unreviewed_paths',
+        array(
+          'revisionid' => $rev_id,
+        ));
+      if (array_key_exists('pass', $uber_metadata_unreviewed_paths)
+        && false === $uber_metadata_unreviewed_paths['pass']
+      ) {
+
+        id(new PhutilConsoleWarning('WARNING', pht(
+          'Revision contains paths which were not reviewed by METADATA '.
+          'reviewers. Likely land operation will be blocked.'
+        )))->draw();
+
+        foreach ($uber_metadata_unreviewed_paths['groups'] as $group) {
+
+          $block = new PhutilConsoleBlock();
+          $reviewers = [];
+          if (isset($group['reviewers'][0])) {
+            if (!empty($group['reviewers'][0]['groups'])) {
+              $reviewers = array_map(function($v) {
+                return '#'.$v;
+              }, $group['reviewers'][0]['groups']);
+            }
+            if (!empty($group['reviewers'][0]['users'])) {
+              $users = array_map(function($v) {
+                return '@'.$v;
+              }, $group['reviewers'][0]['users']);
+              $reviewers = array_merge($reviewers, $users);
+            }
+          }
+          $suggestion = pht('No suggested reviewers found');
+          if (!empty($reviewers)) {
+            $suggestion = pht(
+              'Suggested reviewers: ' . implode(', ', $reviewers));
+          }
+
+          $paths = new PhutilConsoleList();
+          if (count($group['paths']) > 5) {
+            $group['paths'] = array_slice($group['paths'], 0, 4);
+            $group['paths'][] = '(and more)...';
+          }
+          $paths->addItems($group['paths']);
+
+          $block->addParagraph($suggestion);
+          $block->addParagraph(pht('Unreviewed paths:'));
+          $block->addList($paths);
+          $console = PhutilConsole::getConsole();
+          $console->writeOut("\n");
+          $block->draw();
+
+          $prompt = pht('Continue anyway?');
+          $ok = phutil_console_confirm($prompt);
+          if (!$ok) {
+            throw new ArcanistUserAbortException();
+          }
+        }
+      }
+    } catch (Exception $e) {
+      $warning = pht(
+        'Failed perform check if revision was reviewed by all required '.
+        'reviewers defined on METADATA files. This validation will be '.
+        'performed during `git push` operation.'
+      );
+      id(new PhutilConsoleBlock())
+        ->addParagraph(tsprintf(
+          '<bg:yellow>** %s **</bg>', 'WARNING'))
+        ->addParagraph(tsprintf('%B', $warning))
+        ->draw();
+
+    }
+
     if ($state_warning !== null) {
       $prompt = pht('Land revision in the wrong state?');
 
