@@ -1003,6 +1003,8 @@ EOTEXT
           }
         }
       }
+    } catch (ArcanistUserAbortException $e) {
+      throw $e; // pass this exception.
     } catch (Exception $e) {
       $warning = pht(
         'Failed perform check if revision was reviewed by all required '.
@@ -1014,7 +1016,6 @@ EOTEXT
           '<bg:yellow>** %s **</bg>', 'WARNING'))
         ->addParagraph(tsprintf('%B', $warning))
         ->draw();
-
     }
 
     if ($state_warning !== null) {
