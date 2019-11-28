@@ -182,6 +182,7 @@ final class UberArcanistStackSubmitQueueEngine
       } else {
         $err = phutil_passthru('git rebase %s', $ontoBranch);
         if ($err) {
+
           throw new ArcanistUsageException(pht(
             "'%s' failed. You can abort with '%s', or resolve conflicts " .
             "and use '%s' to continue forward. After resolving the rebase, " .
