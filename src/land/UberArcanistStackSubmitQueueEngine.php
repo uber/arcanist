@@ -133,7 +133,7 @@ final class UberArcanistStackSubmitQueueEngine
       $this->runCommandSilently(array("echo", "N", "|", "arc", 'patch', "--diff", $latestDiffId,
         "--uber-use-staging-git-tags", "--uber-use-merge-strategy"));
       $repository_api->reloadWorkingCopy();
-      //Set Base Commit to be HEAD-1 as arc-patch guarantees single commit-id
+      // Set Base Commit to be HEAD-1 as arc-patch guarantees single commit-id
       $repository_api->setBaseCommit("HEAD~1");
       $branchName = $repository_api->getBranchName();
       $this->directPatchApplyBranches[$revision_id] = $branchName;
@@ -178,45 +178,72 @@ final class UberArcanistStackSubmitQueueEngine
         echo phutil_console_format(pht('Rebasing **%s** onto **%s**', $targetBranch, $ontoBranch) . "\n");
       }
       if (!$verbose) {
-        $this->runCommandSilently(array("echo", "y", "|", "git","rebase", pht("%s", $ontoBranch)));
+        try {
+          $this->runCommandSilently(array('echo', 'y', '|', 'git', 'rebase', pht('%s', $ontoBranch)),
+                                          !$this->getUsesArcFlow());
+        } catch (Exception $e) {
+          if (!$this->getUsesArcFlow()) {
+            throw $e;
+          }
+          $this->writeInfo('ARC_REBASE',
+            pht('Unable to use standard rebase, trying alternative - rebase --onto %s %s^',  $ontoBranch, $targetBranch));
+          $repository_api->execxLocal('rebase --abort');
+          $repository_api->reloadWorkingCopy();
+          $this->runCommandSilently(array('echo', 'y', '|', 'git', 'rebase', '--onto', pht('%s', $ontoBranch), pht('%s^', $targetBranch)));
+        }
       } else {
         $err = phutil_passthru('git rebase %s', $ontoBranch);
         if ($err) {
-          throw new ArcanistUsageException(pht(
-            "'%s' failed. You can abort with '%s', or resolve conflicts " .
-            "and use '%s' to continue forward. After resolving the rebase, " .
-            "run '%s'.",
-            sprintf('git rebase %s', $ontoBranch),
-            'git rebase --abort',
-            'git rebase --continue',
-            'arc diff'));
+          if ($this->getUsesArcFlow()) {
+            $this->writeInfo('ARC_REBASE',
+              pht('Unable to use standard rebase, trying alternative - rebase --onto %s %s^',  $ontoBranch, $targetBranch));
+            $repository_api->execxLocal('rebase --abort');
+            $repository_api->reloadWorkingCopy();
+            $err = phutil_passthru('git rebase --onto %s %s^', $ontoBranch, $targetBranch);
+          }
+          if ($err) {
+            throw new ArcanistUsageException(pht(
+              "'%s' failed. You can abort with '%s', or resolve conflicts ".
+              "and use '%s' to continue forward. After resolving the rebase, ".
+              "run '%s'.",
+              sprintf('git rebase %s', $ontoBranch),
+              'git rebase --abort',
+              'git rebase --continue',
+              'arc diff'));
+          }
         }
       }
       $repository_api->reloadWorkingCopy();
     }
   }
 
-  private function rebaseAndArcDiffStack($startIndex) {
-    $prevIndex = $startIndex -1;
-    //By definition, Prev Index will always be valid
-    assert($prevIndex >= 0,"Unexpected: Starting index for rebasing + arc-diff");
-    for ( $index=$startIndex; $index< count($this->revisionIdsInStackOrder); $index++) {
-      $prevDiff = $this->revisionIdsInStackOrder[$prevIndex];
-      $currDiff = $this->revisionIdsInStackOrder[$index];
+  private function rebaseAndArcDiffStack($start_index) {
+    $prev_index = $start_index - 1;
+    // By definition, Prev Index will always be valid
+    if ($prev_index >= 0) {
+      throw new ArcanistUsageException('Unexpected: Starting index for '.
+                                       'rebasing + arc-diff');
+    }
+    for ($index = $start_index;
+         $index < count($this->revisionIdsInStackOrder);
+         $index++) {
+      $prev_diff = $this->revisionIdsInStackOrder[$prev_index];
+      $curr_diff = $this->revisionIdsInStackOrder[$index];
       $this->debugLog("%s\n",
-        pht('Rebasing diff D%s onto D%s and doing arc-diff for D%s',$currDiff, $prevDiff, $currDiff));
-      $currBranch = $this->rebasePatchApplyBranches[$currDiff];
-      $parentBranch = $this->rebasePatchApplyBranches[$prevDiff];
-      $this->rebase($currBranch, $parentBranch, true);
+        pht('Rebasing diff D%s onto D%s and doing arc-diff for D%s',
+            $curr_diff, $prev_diff, $curr_diff));
+      $curr_branch = $this->rebasePatchApplyBranches[$curr_diff];
+      $parent_branch = $this->rebasePatchApplyBranches[$prev_diff];
+      $this->rebase($curr_branch, $parent_branch, true);
       $this->runChildWorkflow('diff',
-        array('--update', pht('D%s', $currDiff), 'HEAD^1'),
+        array('--update', pht('D%s', $curr_diff), 'HEAD^1'),
         "ARC_DIFF_ERROR",
-        pht("arc diff for D%s failed with error.code=", $currDiff));
-      $prevIndex = $startIndex;
+        pht('arc diff for D%s failed with error.code=', $curr_diff));
+      $prev_index = $start_index;
     }
   }
 
-  private function runCommandSilently($cmdArr) {
+  private function runCommandSilently($cmdArr, $print_output = true) {
     $stdoutFile = tempnam("/tmp", "arc_stack_out_");
     $stderrFile = tempnam("/tmp", "arc_stack_err_");
     $cmd = null;
@@ -227,8 +254,10 @@ final class UberArcanistStackSubmitQueueEngine
       $this->debugLog("Executing cmd (%s)\n", $cmd);
       $this->execxLocal($cmd);
     } catch (Exception $exp) {
-      echo pht("Command failed (%s) Output : \n%s\nError : \n%s\n",$cmd,
-        file_get_contents($stdoutFile), file_get_contents($stderrFile));
+      if ($print_output === true) {
+        echo pht("Command failed (%s) Output : \n%s\nError : \n%s\n", $cmd,
+          file_get_contents($stdoutFile), file_get_contents($stderrFile));
+      }
       throw $exp;
     } finally {
       unlink($stderrFile);
@@ -267,11 +296,11 @@ final class UberArcanistStackSubmitQueueEngine
     $parentRevisionId = null;
     $repository_api = $this->getRepositoryAPI();
     $index = 0;
-    $parentBranch = null;
+    $parent_branch = null;
     foreach($this->revisionIdsInStackOrder as $revision_id) {
       $repository_api->reloadWorkingCopy();
-      $currBranch = $this->rebasePatchApplyBranches[$revision_id];
-      $this->rebase($currBranch, $parentBranch, $this->traceModeEnabled);
+      $curr_branch = $this->rebasePatchApplyBranches[$revision_id];
+      $this->rebase($curr_branch, $parent_branch, $this->traceModeEnabled);
       $repository_api->reloadWorkingCopy();
       // We are in current branch. Set Base Commit to be HEAD-1
       $repository_api->setBaseCommit("HEAD~1");
@@ -282,7 +311,8 @@ final class UberArcanistStackSubmitQueueEngine
       }
       if ($local_diff != $this->directPatchDiffContainer[$revision_id]) {
         $this->debugLog("Local Diff for revision D%s (Base : %s, Head: %s). Branch : %s, Diff : (%s)\n",
-          $revision_id, $repository_api->getBaseCommit(), $repository_api->getHeadCommit(), $currBranch, $local_diff);
+          $revision_id, $repository_api->getBaseCommit(),
+          $repository_api->getHeadCommit(), $curr_branch, $local_diff);
         $this->debugLog("Direct patch diff (%s)\n", $this->directPatchDiffContainer[$revision_id]);
         $ok = phutil_console_confirm(pht(
           "IMPORTANT - Revision D%s does not seem to be based-off of latest diffId of revision D%s. ".
@@ -295,7 +325,7 @@ final class UberArcanistStackSubmitQueueEngine
         }
         return $index;
       }
-      $parentBranch = $currBranch;
+      $parent_branch = $curr_branch;
       $parentRevisionId = $revision_id;
       $index++;
     }

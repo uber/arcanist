@@ -3,12 +3,15 @@
 class UberArcanistSubmitQueueEngine
     extends ArcanistGitLandEngine
 {
+  protected $submitQueueClient;
+  protected $conduit;
   protected $revision;
   protected $shouldShadow;
   protected $skipUpdateWorkingCopy;
   private $submitQueueRegex;
   private $tbr;
   private $submitQueueTags;
+  private $usesArcFlow;
 
   public function execute() {
     $this->verifySourceAndTargetExist();
@@ -110,9 +113,10 @@ class UberArcanistSubmitQueueEngine
       pht('Please use "%s" to track your changes', $statusUrl));
   }
 
-  public function __construct($submitQueueClient, $conduit) {
+  public function __construct($submitQueueClient, $conduit, $usesArcFlow = false) {
     $this->submitQueueClient = $submitQueueClient;
     $this->conduit = $conduit;
+    $this->usesArcFlow = $usesArcFlow;
   }
 
   final public function getRevision() {
@@ -186,7 +190,7 @@ class UberArcanistSubmitQueueEngine
     $reviewed_diff = $this->normalizeDiff(
       $this->conduit->callMethodSynchronous(
         'differential.getrawdiff',
-        array('diffID' => head($this->getRevision()['diffs']))));
+        array('diffID' => head(idx($this->getRevision(), 'diffs')))));
 
     if ($local_diff !== $reviewed_diff) {
       $diffWorkflow = $this->getWorkflow()->buildChildWorkflow('diff', array());
@@ -278,7 +282,7 @@ class UberArcanistSubmitQueueEngine
       $diff = head(
         $this->getConduit()->callMethodSynchronous(
           'differential.querydiffs',
-          array('ids' => array(head($this->getRevision()['diffs'])))));
+          array('ids' => array(head(idx($this->getRevision(), 'diffs'))))));
       $properties = idx($diff, 'properties', array());
       $commits = idx($properties, 'local:commits', array());
       $result = ipull($commits, 'summary');
@@ -295,6 +299,7 @@ class UberArcanistSubmitQueueEngine
     assert(!empty($this->revision));
   }
 
-  protected $submitQueueClient;
-  protected $conduit;
+  public function getUsesArcFlow() {
+    return $this->usesArcFlow;
+  }
 }
