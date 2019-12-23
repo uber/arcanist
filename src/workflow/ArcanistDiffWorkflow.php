@@ -587,9 +587,9 @@ EOTEXT
           ));
           $rev = head($rev);
           if (idx($rev, 'statusName', false) == 'Changes Planned') {
-            $this->writeInfo("Changes Planned", phutil_console_format(
+            $this->writeInfo('Changes Planned', phutil_console_format(
               pht('Keyword "wip" detected and Differential Revision D%s is in '.
-                  '<fg:green>Changes Planned<fg> status, keeping same status',
+                  '<fg:green>Changes Planned</fg> status, keeping same status',
               $commit_message->getRevisionID())));
             $revision['fields']['plan-changes'] = true;
           }
