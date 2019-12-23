@@ -612,7 +612,7 @@ EOTEXT
           $prompt = 'Keyword "wip" was detected, do you want to set '.
             'differential to <fg:green>Changes planned</fg> status which will '.
             ' not send notifications to subscribers and reviewers of this '.
-            'change? You can later change state via Web UI or by changing '.
+            'change? You can later change status via Web UI or by changing '.
             'change title during next revision';
           if (phutil_console_confirm(phutil_console_format($prompt), false)) {
             $revision['fields']['plan-changes'] = true;
