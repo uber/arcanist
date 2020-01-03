@@ -12,7 +12,7 @@ final class ICCascadeWorkflow extends ICFlowBaseWorkflow {
 
   public function getCommandSynopses() {
     return phutil_console_format(<<<EOTEXT
-      **cascade** [--halt-on-conflict] [branch]
+      **cascade** [--halt-on-conflict] [rootbranch]
 EOTEXT
       );
   }
