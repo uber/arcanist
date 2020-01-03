@@ -500,7 +500,9 @@ EOTEXT
           $bundle->getBaseRevision());
         // UBER CODE
         if (!$has_base_revision) {
-          $this->pullHashFromAllRemotes($bundle->getBaseRevision());
+          $this->pullFromAllRemotesUntilFound($bundle->getBaseRevision());
+          $has_base_revision = $repository_api->hasLocalCommit(
+            $bundle->getBaseRevision());
         }
         // UBER CODE
       }
@@ -1252,9 +1254,9 @@ EOTEXT
     return self::SUCCESS;
   }
 
-  // fetches hash from any remote repository has configured and also from
-  // staging if repo has one
-  private function pullHashFromAllRemotes($hash) {
+  // fetches hash from any remote repository configured and also from
+  // staging if repository has one
+  private function pullFromAllRemotesUntilFound($hash) {
     if (!$hash) {
       return;
     }
@@ -1271,6 +1273,9 @@ EOTEXT
     }
     foreach ($remotes as $remote) {
       $repository_api->execManualLocal('fetch %s %s', $remote, $hash);
+      if ($repository_api->hasLocalCommit($hash)) {
+        break;
+      }
     }
   }
 
