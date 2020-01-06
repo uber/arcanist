@@ -309,12 +309,12 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
     }
   }
 
-  public function setRootBranch($rootBranch) {
-    if ($this->rootBranch != $rootBranch) {
+  public function setRootBranch($root_branch) {
+    if ($this->rootBranch != $root_branch) {
       // changing rootBranch changes flow workspace
       $this->flow = null;
     }
-    $this->rootBranch = $rootBranch;
+    $this->rootBranch = $root_branch;
     return $this;
   }
 }

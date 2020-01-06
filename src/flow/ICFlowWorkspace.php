@@ -27,8 +27,8 @@ final class ICFlowWorkspace extends Phobject {
     return $this;
   }
 
-  public function setRootBranch($rootBranch) {
-    $this->rootBranch = $rootBranch;
+  public function setRootBranch($root_branch) {
+    $this->rootBranch = $root_branch;
     return $this;
   }
 
@@ -297,13 +297,15 @@ final class ICFlowWorkspace extends Phobject {
         $edges[$upstream] = $downstream;
       }
       $truncated_graph = new ICGitBranchGraph();
-      $truncated_graph->addNodes(array($this->rootBranch => idx($edges, $this->rootBranch, array())));
+      $truncated_graph->addNodes(
+        array($this->rootBranch => idx($edges, $this->rootBranch, array())));
 
       $to_visit = idx($edges, $this->rootBranch, array());
       while (!empty($to_visit)) {
         $branch = array_pop($to_visit);
         $to_visit = array_merge($to_visit, idx($edges, $branch, array()));
-        $truncated_graph->addNodes(array($branch => idx($edges, $branch, array())));
+        $truncated_graph->addNodes(
+          array($branch => idx($edges, $branch, array())));
       }
       return $truncated_graph->loadGraph();
     }
