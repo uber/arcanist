@@ -18,8 +18,8 @@ EOTEXT
       "\n          Synchronizes revisions and revision metadata between your ".
       "local working copy and the\n".
       "          remote install. If no options are passed it will refresh ".
-      "dependencies and revisions.\n          Synchronization by default isstarted".
-      ' from master branch, you can specify different root branch');
+      "dependencies and revisions.\n          Synchronization by default is ".
+      'started from master branch, you can specify different root branch');
   }
 
   public function getArguments() {
