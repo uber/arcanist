@@ -588,9 +588,9 @@ EOTEXT
           $rev = head($rev);
           if (idx($rev, 'statusName', false) == 'Changes Planned') {
             $this->writeInfo('Changes Planned', phutil_console_format(
-              pht('Keyword "wip" detected and Differential Revision D%s is in '.
-                  '<fg:green>Changes Planned</fg> status, keeping same status',
-              $commit_message->getRevisionID())));
+              pht('Keyword "wip" found in title and Differential Revision D%s '.
+                  'is in <fg:green>Changes Planned</fg> status, keeping same '.
+                  'status', $commit_message->getRevisionID())));
             $revision['fields']['plan-changes'] = true;
           }
         }
@@ -609,9 +609,9 @@ EOTEXT
       } else {
         // UBER CODE
         if ($wip && !idx($revision['fields'], 'plan-changes', false)) {
-          $prompt = 'Keyword "wip" was detected, do you want to set '.
-            'differential to <fg:green>Changes planned</fg> status which will '.
-            ' not send notifications to subscribers and reviewers of this '.
+          $prompt = 'Keyword "wip" found in revision title, do you want to '.
+            'set differential to <fg:green>Changes planned</fg> status which '.
+            'will not send notifications to subscribers and reviewers of this '.
             'change? You can later change status via Web UI or by changing '.
             'change title during next revision';
           if (phutil_console_confirm(phutil_console_format($prompt), false)) {
