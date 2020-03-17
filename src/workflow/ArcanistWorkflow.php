@@ -327,9 +327,41 @@ abstract class ArcanistWorkflow extends Phobject {
         $conduit->setConduitToken($token);
 
         try {
-          $result = $this->getConduit()->callMethodSynchronous(
-            'user.whoami',
-            array());
+          // UBER CODE
+          if (getenv('ARC_USSO_TOKEN')) {
+            $this->getConduit()->setHeader('Authorization',
+                                           'Bearer '.getenv('ARC_USSO_TOKEN'));
+          } else {
+            $tkn = $this->maybeUseUSSOToken($conduit->getHost());
+            if ($tkn !== false) {
+              $this->getConduit()->setHeader('Authorization', 'Bearer '.$tkn);
+            }
+          }
+
+          try {
+            $result = $this->getConduit()->callMethodSynchronous(
+              'user.whoami',
+              array());
+          } catch (HTTPFutureHTTPResponseStatus $ex) {
+            if (!getenv('ARC_USSO_TOKEN') &&
+                ($ex->getStatusCode() == 401) &&
+                !empty($ex->getExcerpt())) {
+
+              $msg = json_decode($ex->getExcerpt(), true);
+              if (!empty($msg) && idx($msg, 'error', false) !== false &&
+                  idx($msg, 'code', false) !== false) {
+                // sounds like usso enabled endpoint
+                $tkn = $this->getUSSOTokenForDomain($conduit->getHost());
+                $this->getConduit()->setHeader('Authorization', 'Bearer '.$tkn);
+                $result = $this->getConduit()->callMethodSynchronous(
+                  'user.whoami',
+                 array());
+              }
+            } else {
+              throw $ex;
+            }
+          }
+          // UBER CODE END
 
           $this->userName = $result['userName'];
           $this->userPHID = $result['phid'];
@@ -2067,6 +2099,75 @@ abstract class ArcanistWorkflow extends Phobject {
     }
     return $map;
   }
+
+  // UBER CODE
+  // usso itself is somewhat sluggish, takes 1 second to return cached token
+  const USSO_CACHE_TIMEOUT = 600;
+
+  private static function getUSSOCacheFilename($domain) {
+    return implode(DIRECTORY_SEPARATOR,
+                   array(
+                   sys_get_temp_dir(),
+                         sprintf('usso-token-cache-%s.json', md5($domain)),
+                   ));
+  }
+
+  private function maybeUseUSSOToken($domain) {
+    $cache = self::getUSSOCacheFilename($domain);
+    try {
+      $data = @json_decode(file_get_contents($cache), true);
+      if (is_array($data)) {
+        if (idx($data, 'createdAt', 0) + self::USSO_CACHE_TIMEOUT > time()) {
+          return idx($data, 'token', false);
+        }
+      }
+    } catch (Exception $e) {
+      // it is ok to fail here, we will fallback to `usso`
+    }
+    return false;
+  }
+
+  private function getUSSOTokenForDomain($domain) {
+    // check ussh and if necessary ask to auth
+    list($e, $stdin, $stderr) = exec_manual('ussh');
+    if ($e != 0) {
+      $e = phutil_passthru('ussh');
+      if ($e != 0) {
+        throw new ArcanistUsageException(
+          pht('Looks like you missing `ussh` or it is not working'));
+      }
+    }
+    // try fetching usso token
+    list($e, $stdin, $stderr) = exec_manual('usso -ussh %s', $domain);
+    if ($e != 0) {
+      $e = phutil_passthru('usso -ussh %s', $domain);
+      if ($e != 0) {
+        throw new ArcanistUsageException(
+          pht('Looks like you missing `usso` or it is not working'));
+      }
+    }
+    // try actually fetching token
+    list($e, $stdin, $stderr) = exec_manual('usso -ussh %s -print', $domain);
+    if ($e != 0) {
+      throw new ArcanistUsageException($stdin."\n".$stderr);
+    }
+    $token = trim($stdin);
+    $old = umask(0077);
+    try {
+      $cache = self::getUSSOCacheFilename($domain);
+      file_put_contents($cache,
+                        json_encode(array(
+                                          'createdAt' => time(),
+                                          'token' => $token,
+                        )));
+      chmod($cache, 0600);
+    } catch (Exception $e) {
+      // it is ok to fail here, we will fallback to `usso`
+    }
+    umask($old);
+    return trim($stdin);
+  }
+  // UBER CODE END
 
 
 }
