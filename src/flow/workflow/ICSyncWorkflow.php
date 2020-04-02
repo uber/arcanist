@@ -137,6 +137,20 @@ EOTEXT
     return 0;
   }
 
+  private function runDiffWorkflow($diff_args) {
+    // instantiate new repository api for 'diff' child workflow.
+    // otherwise, the base commit remains the same for all branches
+    // (Branch A contains A, Branch B contains A+B, etc.) which is bad
+    $repository_api =
+      ArcanistRepositoryAPI::newAPIFromConfigurationManager(
+        $this->getConfigurationManager());
+    $diff_workflow = $this->buildChildWorkflow('diff', $diff_args)
+     ->setRepositoryAPI($repository_api);
+    $diff_workflow->getArcanistConfiguration()
+      ->willRunWorkflow('diff', $diff_workflow);
+    $diff_workflow->run();
+  }
+
   protected function runRevisionSync($extra_diff_args = array()) {
     $git = $this->getRepositoryAPI();
     $graph = $this->loadGitBranchGraph();
@@ -149,10 +163,35 @@ EOTEXT
     $grafted_parent_branches = array();
 
     foreach ($graph->getNodesInTopologicalOrder() as $branch_name) {
+      if ($branch_name == 'master') {
+        continue;
+      }
       $feature = $this->getFeature($branch_name);
 
-      if (!$feature || !$feature->getAuthorPHID()) {
-        // no revision or author
+      if (!$feature) {
+        $confirm = $this->consoleConfirm(tsprintf(
+          'Branch "%s" has no Differential Revision attached, do you want to '.
+          'create one?', $branch_name));
+        if (!$confirm) {
+          $this->writeInfo(pht(
+            'Skipping branch "%s"', $branch_name), '');
+          continue;
+        }
+        // looks like branch has no Revision, create one and start over again
+        echo "\n";
+        $this->writeInfo(pht(
+          'Creating new Differential Revision for branch "%s"',
+          $branch_name), '');
+        $this->checkoutBranch($branch_name, true);
+        $this->runDiffWorkflow($extra_diff_args);
+        $this->clearFlowWorkspace();
+        $this->checkoutBranch($initial_branch);
+        return $this->runRevisionSync($extra_diff_args);
+      }
+
+      if (!$feature->getAuthorPHID()) {
+        // no author, do not know how can revision have no author... keeping for
+        // compatibility
         continue;
       }
 
@@ -246,9 +285,6 @@ EOTEXT
           // instantiate new repository api for 'diff' child workflow.
           // otherwise, the base commit remains the same for all branches
           // (Branch A contains A, Branch B contains A+B, etc.) which is bad
-          $repository_api =
-            ArcanistRepositoryAPI::newAPIFromConfigurationManager(
-              $this->getConfigurationManager());
           $changes_planned =
             ArcanistDifferentialRevisionStatus::getNameForRevisionStatus(
               ArcanistDifferentialRevisionStatus::CHANGES_PLANNED);
@@ -262,11 +298,7 @@ EOTEXT
           if ($branch_status[$branch_name] == $changes_planned) {
             array_push($diff_args, '--plan-changes');
           }
-          $diff_workflow = $this->buildChildWorkflow('diff', $diff_args)
-            ->setRepositoryAPI($repository_api);
-          $diff_workflow->getArcanistConfiguration()
-            ->willRunWorkflow('diff', $diff_workflow);
-          $diff_workflow->run();
+          $this->runDiffWorkflow($diff_args);
         }
 
         echo "\n";
