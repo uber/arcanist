@@ -163,6 +163,7 @@ EOTEXT
     $grafted_parent_branches = array();
 
     foreach ($graph->getNodesInTopologicalOrder() as $branch_name) {
+      // generally master branch is not that interesting, skip it
       if ($branch_name == 'master') {
         continue;
       }
