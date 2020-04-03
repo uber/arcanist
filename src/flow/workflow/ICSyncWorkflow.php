@@ -198,6 +198,9 @@ EOTEXT
         $this->clearFlowWorkspace();
         $feature = $this->getFeature($branch_name);
         $this->checkoutBranch($initial_branch);
+        $this->writeInfo(pht(
+          'You might have to rerun `arc sync` to synchronize dependencies'),
+          '');
       }
 
       if (!$feature->getAuthorPHID()) {
