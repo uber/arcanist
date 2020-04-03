@@ -169,6 +169,7 @@ EOTEXT
       }
       $feature = $this->getFeature($branch_name);
 
+      // if feature/revision is missing ask if one should be created
       if (!$feature) {
         $confirm = $this->consoleConfirm(tsprintf(
           'Branch "%s" has no Differential Revision attached, do you want to '.
@@ -186,8 +187,17 @@ EOTEXT
         $this->checkoutBranch($branch_name, true);
         $this->runDiffWorkflow($extra_diff_args);
         $this->clearFlowWorkspace();
+        $feature = $this->getFeature($branch_name);
+        $this->writeInfo(pht(
+          'Cascading changes after creation of new Differential Revision'), '');
+        $this->buildChildWorkflow(
+          'cascade',
+          array($feature->getHead()->getUpstream()))->run();
+        // refresh feature because some metadata might have changed after
+        // cascade
+        $this->clearFlowWorkspace();
+        $feature = $this->getFeature($branch_name);
         $this->checkoutBranch($initial_branch);
-        return $this->runRevisionSync($extra_diff_args);
       }
 
       if (!$feature->getAuthorPHID()) {
