@@ -4,7 +4,6 @@ final class UberArcanistStackGitLandEngine
   extends ArcanistGitLandEngine {
 
   private $revisionIdsInStackOrder;
-  private $tempBranch;
   private $mergedRef;
 
   /**
@@ -25,9 +24,9 @@ final class UberArcanistStackGitLandEngine
   /**
    * Helper method to allow running child workflow
    * @param $workflow Workflow Name
-   * @param $paramArray Arguments for workflow
-   * @param $errTitle Error Title to be displayed
-   * @param $errMessage Error Message to be displayed
+   * @param $params Arguments for workflow
+   * @param $err_title Error Title to be displayed
+   * @param $err_msg Error Message to be displayed
    * @throws Exception
    */
   private function runChildWorkflow($workflow, $params, $err_title, $err_msg) {
@@ -96,7 +95,7 @@ final class UberArcanistStackGitLandEngine
 
   protected function updateWorkingCopy() {
     $api = $this->getRepositoryAPI();
-    $this->tempBranch = $this->createBranch($this->getTargetOnto());
+    $tempBranch = $this->createBranch($this->getTargetOnto());
     // apply changes from phabricator
     foreach ($this->revisionIdsInStackOrder as $revision) {
       $patch_args = array(
@@ -115,7 +114,7 @@ final class UberArcanistStackGitLandEngine
       // if repo is ok with squashing then make simple merge
       $api->execxLocal(
         'merge --no-stat --no-commit --ff -- %s',
-        $this->tempBranch);
+        $tempBranch);
     } catch (Exception $ex) {
       $api->execManualLocal('merge --abort');
       $api->execManualLocal('reset --hard HEAD --');
@@ -124,7 +123,7 @@ final class UberArcanistStackGitLandEngine
         pht(
           'Local "%s" does not merge cleanly into "%s". Merge or rebase '.
           'local changes so they can merge cleanly.',
-          $this->tempBranch,
+          $tempBranch,
           $this->getTargetFullRef()));
     }
 
@@ -136,7 +135,7 @@ final class UberArcanistStackGitLandEngine
     $this->mergedRef = trim($stdout);
     // delete temporary stack if merge and everything is fin
     $api->execxLocal('checkout %s', $this->getSourceRef());
-    $api->execxLocal('branch -D %s', $this->tempBranch);
+    $api->execxLocal('branch -D %s', $tempBranch);
   }
 
   protected function pushChange() {
