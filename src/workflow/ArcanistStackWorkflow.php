@@ -378,8 +378,7 @@ EOTEXT
       ->setTargetOnto($this->onto)
       ->setShouldHold($should_hold)
       ->setShouldKeep($this->keepBranch)
-      ->setShouldPreview($this->preview)
-      ->setShouldSquash(false);
+      ->setShouldPreview($this->preview);
       $engine->execute();
 
       if (!$should_hold && !$this->preview) {
