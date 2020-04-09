@@ -1,4 +1,5 @@
 <?php
+
 // class implements couple of helpers needed to work with uSSO
 final class UberUSSO extends Phobject {
   // usso itself is somewhat sluggish, takes 1 second to return cached token
@@ -6,13 +7,14 @@ final class UberUSSO extends Phobject {
 
   public function enhanceConduitClient(
     $conduit,
-    HTTPFutureHTTPResponseStatus $status=null) {
+    HTTPFutureHTTPResponseStatus $status = null) {
 
     if ($status != null) {
       // if ARC_USSO_TOKEN is set (service most like) we should not try to use
       // usso/ussh stuff
       if (!getenv('ARC_USSO_TOKEN')) {
-        if (($status->getStatusCode() == 401) && !empty($status->getExcerpt())) {
+        if (($status->getStatusCode() == 401) &&
+            !empty($status->getExcerpt())) {
           $msg = json_decode($status->getExcerpt(), true);
           if (!empty($msg) && idx($msg, 'error', false) !== false &&
               idx($msg, 'code', false) !== false) {
@@ -73,6 +75,7 @@ final class UberUSSO extends Phobject {
       throw new ArcanistUsageException($stdin."\n".$stderr);
     }
     $token = trim($stdin);
+    // try creating file with 0600 permissions
     $old = umask(0077);
     try {
       $cache = self::getUSSOCacheFilename($domain);
@@ -93,7 +96,7 @@ final class UberUSSO extends Phobject {
     return implode(DIRECTORY_SEPARATOR,
                    array(
                    sys_get_temp_dir(),
-                         sprintf('usso-token-cache-%s.json', md5($domain)),
+                   sprintf('usso-token-cache-%s.json', md5($domain)),
                    ));
   }
 }
