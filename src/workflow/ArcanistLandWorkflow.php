@@ -377,6 +377,13 @@ EOTEXT
 
       $engine->parseArguments();
 
+      // This must be configured or we fail later inside "buildEngineMessage()".
+      // This is less than ideal.
+      $this->ontoRemoteBranch = sprintf(
+        '%s/%s',
+        $engine->getTargetRemote(),
+        $engine->getTargetOnto());
+
       $this->requireCleanWorkingCopy();
       $engine->execute();
 
