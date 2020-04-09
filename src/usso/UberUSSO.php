@@ -1,17 +1,14 @@
 <?php
-// class implements couple of helpers need to work with uSSO
+// class implements couple of helpers needed to work with uSSO
 final class UberUSSO extends Phobject {
   // usso itself is somewhat sluggish, takes 1 second to return cached token
   const USSO_CACHE_TIMEOUT = 600;
 
   public function enhanceConduitClient(
     $conduit,
-    HTTPFutureHTTPResponseStatus $status=null,
-    $tkn=null) {
+    HTTPFutureHTTPResponseStatus $status=null) {
 
-    if ($tkn != null) {
-
-    } else if ($status != null) {
+    if ($status != null) {
       // if ARC_USSO_TOKEN is set (service most like) we should not try to use
       // usso/ussh stuff
       if (!getenv('ARC_USSO_TOKEN')) {
