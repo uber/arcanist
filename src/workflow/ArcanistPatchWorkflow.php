@@ -430,13 +430,11 @@ EOTEXT
           $bundle = ArcanistBundle::newFromArcBundle($path);
           break;
         case self::SOURCE_REVISION:
-          $this->authenticateConduit(); // UBER CODE
           $bundle = $this->loadRevisionBundleFromConduit(
             $this->getConduit(),
             $param);
           break;
         case self::SOURCE_DIFF:
-          $this->authenticateConduit(); // UBER CODE
           if ($this->shouldMergeUsingStagingGitTag()) {
             $bundle = $this->loadDiffBundleFromConduit(
               $this->getConduit(),
@@ -460,7 +458,16 @@ EOTEXT
       } else {
         throw $ex;
       }
+    // UBER CODE
+    } catch (HTTPFutureHTTPResponseStatus $ex) {
+      if ($ex->getStatusCode() == 401) {
+        $this->authenticateConduit();
+        return $this->run();
+      } else {
+        throw $ex;
+      }
     }
+    // UBER CODE END
     $try_encoding = nonempty($this->getArgument('encoding'), null);
     if (!$try_encoding) {
       if ($this->requiresConduit()) {
