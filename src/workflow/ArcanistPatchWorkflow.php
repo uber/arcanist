@@ -430,11 +430,13 @@ EOTEXT
           $bundle = ArcanistBundle::newFromArcBundle($path);
           break;
         case self::SOURCE_REVISION:
+          $this->authenticateConduit(); // UBER CODE
           $bundle = $this->loadRevisionBundleFromConduit(
             $this->getConduit(),
             $param);
           break;
         case self::SOURCE_DIFF:
+          $this->authenticateConduit(); // UBER CODE
           if ($this->shouldMergeUsingStagingGitTag()) {
             $bundle = $this->loadDiffBundleFromConduit(
               $this->getConduit(),
