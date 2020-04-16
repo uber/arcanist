@@ -990,7 +990,7 @@ phutil_register_library_map(array(
     'TAPTestEngine' => 'ArcanistUnitTestEngine',
     'UberArcPostPushListener' => 'PhutilEventListener',
     'UberArcPrePushEventListener' => 'PhutilEventListener',
-    'UberArcanistStackGitLandEngine' => 'UberArcanistStackGitLandEngine',
+    'UberArcanistStackGitLandEngine' => 'ArcanistGitLandEngine',
     'UberArcanistStackSubmitQueueEngine' => 'UberArcanistSubmitQueueEngine',
     'UberArcanistSubmitQueueEngine' => 'ArcanistGitLandEngine',
     'UberCheckstyleLinter' => 'ArcanistFutureLinter',
