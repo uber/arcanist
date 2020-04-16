@@ -56,7 +56,8 @@ EOTEXT
           step in the standard Differential pre-publish code review workflow.
 
           This command also supports landing stack of diffs to repositories which do not use Submit Queue. Changes
-          are pushed to repository atomically as one pack.
+          are pushed to repository atomically as one pack. Only changes present in Phabricator will be applied! Make
+          sure your changes are synced to Phabricator otherwise you might loose them!
 
           FAQS:
           1. What are the Submit Queue guarantees for Stacked-Diffs ?
