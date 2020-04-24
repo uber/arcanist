@@ -108,6 +108,7 @@ EOTEXT
               array('type' => 'parents.set', 'value' => $depends_on),
             ),
         ));
+        $this->writeInfo("Dependencies updated", '');
       }
 
       foreach (new FutureIterator($calls) as $call) {
@@ -346,5 +347,4 @@ EOTEXT
       ));
     return in_array($feature->getRevisionStatusName(), $closed_statuses);
   }
-
 }
