@@ -79,7 +79,7 @@ final class ICFlowWorkspace extends Phobject {
     return $rval;
   }
 
-  private function cacheActiveDiffs(array $diff_ids) {
+  private function cacheRawActiveDiffs(array $diff_ids) {
     $diff_ids = array_unique($diff_ids);
     $keys = array();
     foreach ($diff_ids as $diff_id) {
@@ -101,19 +101,31 @@ final class ICFlowWorkspace extends Phobject {
     return $rval;
   }
 
+  private function getActiveDiffs(array $diff_ids) {
+    $diffs = $this->conduit->callMethodSynchronous('differential.querydiffs',
+          array(
+            'ids' => $diff_ids,
+    ));
+    return $diffs;
+  }
+
   public function loadActiveDiffs() {
     if (!$this->activeDiffsLoaded) {
       $this->loadRevisions();
       $diff_ids = array_filter(mpull($this->getFeatures(), 'getActiveDiffID'));
-      $active_diffs = $this->cacheActiveDiffs($diff_ids);
+      $raw_active_diffs = $this->cacheRawActiveDiffs($diff_ids);
+      $active_diffs = $this->getActiveDiffs($diff_ids);
       foreach ($this->getFeatures() as $branch => $feature) {
         $diff_id = $feature->getActiveDiffID();
         if (!$diff_id) {
+          $feature->attachRawActiveDiff(null);
           $feature->attachActiveDiff(null);
           continue;
         }
+        $feature->attachRawActiveDiff(idx($raw_active_diffs, $diff_id));
         $feature->attachActiveDiff(idx($active_diffs, $diff_id));
       }
+
     }
     return $this;
   }

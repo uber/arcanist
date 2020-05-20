@@ -95,7 +95,7 @@ abstract class ICArcanistWorkflow extends ArcanistWorkflow {
     if (!$feature || !$feature->getRevisionID()) {
       return false;
     }
-    $this->getFlow()->loadRevisions();
+    $this->getFlow()->loadRevisions()->loadActiveDiffs();
     return $feature;
   }
 

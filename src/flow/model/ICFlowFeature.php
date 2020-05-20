@@ -6,9 +6,9 @@ final class ICFlowFeature extends Phobject {
   private $differentialCommitMessage = null;
   // commit sha which has differential commit message, essentially where
   // differential revision starts
-  private $revisionFirstCommit = null;
   private $revision;
   private $search;
+  private $rawActiveDiff;
   private $activeDiff;
 
   private function __construct() {}
@@ -49,7 +49,6 @@ final class ICFlowFeature extends Phobject {
         $log->getMetadata('message'));
       if ($message->getRevisionID() != null) {
         $feature->differentialCommitMessage = $message;
-        $feature->revisionFirstCommit = $log->getCommitHash();
         break;
       }
     }
@@ -96,8 +95,18 @@ final class ICFlowFeature extends Phobject {
     return $this->differentialCommitMessage->getRevisionID();
   }
 
-  public function getRevisionFirstCommit() {
-    return $this->revisionFirstCommit;
+  public function getActiveDiffField($index, $default = null) {
+    if (!$this->activeDiff) {
+      return null;
+    }
+    return idx($this->activeDiff, $index, $default);
+  }
+
+  public function getRevisionBaseCommit() {
+    if ($this->activeDiff == null) {
+      throw new Exception('Active diff is not attached! Cannot get base commit');
+    }
+    return $this->getActiveDiffField('sourceControlBaseRevision');
   }
 
   public function getSearchField($index, $default = null) {
@@ -127,6 +136,15 @@ final class ICFlowFeature extends Phobject {
 
   public function getHead() {
     return $this->head;
+  }
+
+  public function attachRawActiveDiff($diff) {
+    $this->rawActiveDiff = $diff;
+    return $this;
+  }
+
+  public function getRawActiveDiff() {
+    return $this->rawActiveDiff;
   }
 
   public function attachActiveDiff($diff) {
