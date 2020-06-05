@@ -7,7 +7,6 @@ final class ICFlowFeature extends Phobject {
   // commit sha which has differential commit message, essentially where
   // differential revision starts
   private $revision;
-  private $search;
   private $rawActiveDiff;
   private $activeDiff;
 
@@ -107,23 +106,6 @@ final class ICFlowFeature extends Phobject {
       throw new Exception('Active diff is not attached! Cannot get base commit');
     }
     return $this->getActiveDiffField('sourceControlBaseRevision');
-  }
-
-  public function getSearchField($index, $default = null) {
-    if (!$this->search) {
-      return $default;
-    }
-    return idx($this->search, $index, $default);
-  }
-
-  public function attachSearchData(array $search = null) {
-    $this->search = $search;
-    return $this;
-  }
-
-  public function getSearchAttachment($name) {
-    $attachments = $this->getSearchField('attachments', array());
-    return idx($attachments, $name);
   }
 
   public function getDifferentialCommitMessage() {

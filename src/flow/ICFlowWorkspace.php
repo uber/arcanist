@@ -147,29 +147,17 @@ final class ICFlowWorkspace extends Phobject {
     return $this;
   }
 
-  private function differentialQuerySearchResults(array $ids) {
+  private function getDifferentials(array $ids) {
     if (!$ids) {
-      return array(array(), array());
+      return array();
     }
-    $conduit = $this->conduit;
-    $query_future = $conduit->callMethod('differential.query', array(
+    $query_future = $this->conduit->callMethod('differential.query', array(
         'ids' => $ids,
       ));
     $query_future->start();
-    $search_future = $conduit->callMethod('differential.revision.search', array(
-        'constraints' => array(
-          'ids' => $ids,
-        ),
-        'attachments' => array(
-          'queue-submissions' => true,
-        ),
-      ));
-    $search_future->start();
     $query_results = $query_future->resolve();
     $query_results = ipull($query_results, null, 'id');
-    $search_results = $search_future->resolve();
-    $search_results = ipull(idx($search_results, 'data'), null, 'id');
-    return array($query_results, $search_results);
+    return $query_results;
   }
 
   public function loadRevisions() {
@@ -179,14 +167,11 @@ final class ICFlowWorkspace extends Phobject {
       $ids = array_values(array_unique(mpull(
         $revision_features,
         'getRevisionID')));
-      list($query_results, $search_results) =
-        $this->differentialQuerySearchResults($ids);
+      $query_results = $this->getDifferentials($ids);
       foreach ($features as $feature) {
         $rev_id = $feature->getRevisionID();
         $rev_data = $rev_id ? idx($query_results, $rev_id, array()) : null;
         $feature->attachRevisionData($rev_data);
-        $search_data = $rev_id ? idx($search_results, $rev_id, array()) : null;
-        $feature->attachSearchData($search_data);
       }
       $this->revisionsLoaded = true;
     }
