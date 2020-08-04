@@ -57,7 +57,7 @@ final class UberUSSO extends Phobject {
       $e = phutil_passthru('ussh');
       if ($e != 0) {
         throw new ArcanistUsageException(
-          pht('Looks like you missing `ussh` or it is not working'));
+          pht('`ussh` binary is missing or it cannot be executed'));
       }
     }
     // try fetching usso token
@@ -66,7 +66,7 @@ final class UberUSSO extends Phobject {
       $e = phutil_passthru('usso -ussh %s', $domain);
       if ($e != 0) {
         throw new ArcanistUsageException(
-          pht('Looks like you missing `usso` or it is not working'));
+          pht('`usso` binary is missing or it cannot be executed'));
       }
     }
     // try actually fetching token
