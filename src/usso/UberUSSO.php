@@ -95,8 +95,8 @@ final class UberUSSO extends Phobject {
   private static function getUSSOCacheFilename($domain) {
     return implode(DIRECTORY_SEPARATOR,
                    array(
-                   sys_get_temp_dir(),
-                   sprintf('usso-token-cache-%s.json', md5($domain)),
+                         sys_get_temp_dir(),
+                         sprintf('usso-token-cache-%s.json', md5($domain)),
                    ));
   }
 }
