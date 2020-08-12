@@ -466,6 +466,13 @@ EOTEXT
           $try_encoding = $this->getRepositoryEncoding();
         } catch (ConduitClientException $e) {
           $try_encoding = null;
+        // UBER CODE
+        } catch (HTTPFutureHTTPResponseStatus $ex) {
+          if ($ex->getStatusCode() != 401) {
+            throw $ex;
+          }
+          $try_encoding = null;
+        // UBER CODE END
         }
       }
     }
