@@ -2138,7 +2138,11 @@ EOTEXT
       if ($tasks || $issues) {
         return false;
       }
-      return phutil_console_confirm(phutil_console_format('<fg:red>WARNING:</fg> You must associate either Maniphest task or Jira issue with this revision. Do you want to add one?'), $default_no=false);
+      return phutil_console_confirm(
+        phutil_console_format(
+          '<fg:red>WARNING:</fg> You must associate either Maniphest task or '.
+          'Jira issue with this revision. Do you want to add one?'),
+          $default_no = false);
     } catch (PhutilConsoleStdinNotInteractiveException $e) {
       // do nothing
     }
