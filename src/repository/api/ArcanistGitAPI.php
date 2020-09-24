@@ -1097,6 +1097,7 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
         $result[] = array(
           'current' => ($branch === $current),
           'name' => $branch,
+          'ref' => $ref,
           'hash' => $hash,
           'tree' => $tree,
           'epoch' => (int)$epoch,
@@ -1109,17 +1110,46 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
     return $result;
   }
 
+  public function getAllBranchRefs() {
+    $branches = $this->getAllBranches();
+
+    $refs = array();
+    foreach ($branches as $branch) {
+      $commit_ref = $this->newCommitRef()
+        ->setCommitHash($branch['hash'])
+        ->setTreeHash($branch['tree'])
+        ->setCommitEpoch($branch['epoch'])
+        ->attachMessage($branch['text']);
+
+      $refs[] = $this->newBranchRef()
+        ->setBranchName($branch['name'])
+        ->setRefName($branch['ref'])
+        ->setIsCurrentBranch($branch['current'])
+        ->attachCommitRef($commit_ref);
+    }
+
+    return $refs;
+  }
+
+  public function getBaseCommitRef() {
+    $base_commit = $this->getBaseCommit();
+
+    if ($base_commit === self::GIT_MAGIC_ROOT_COMMIT) {
+      return null;
+    }
+
+    $base_message = $this->getCommitMessage($base_commit);
+
+    // TODO: We should also pull the tree hash.
+
+    return $this->newCommitRef()
+      ->setCommitHash($base_commit)
+      ->attachMessage($base_message);
+  }
+
   public function getWorkingCopyRevision() {
     list($stdout) = $this->execxLocal('rev-parse HEAD');
     return rtrim($stdout, "\n");
-  }
-
-  public function getUnderlyingWorkingCopyRevision() {
-    list($err, $stdout) = $this->execManualLocal('svn find-rev HEAD');
-    if (!$err && $stdout) {
-      return rtrim($stdout, "\n");
-    }
-    return $this->getWorkingCopyRevision();
   }
 
   public function isHistoryDefaultImmutable() {
@@ -1156,26 +1186,6 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
     }
     $parser = new ArcanistDiffParser();
     return $parser->parseDiff($diff);
-  }
-
-  public function supportsLocalBranchMerge() {
-    return true;
-  }
-
-  public function performLocalBranchMerge($branch, $message) {
-    if (!$branch) {
-      throw new ArcanistUsageException(
-        pht('Under git, you must specify the branch you want to merge.'));
-    }
-    $err = phutil_passthru(
-      '(cd %s && git merge --no-ff -m %s %s)',
-      $this->getPath(),
-      $message,
-      $branch);
-
-    if ($err) {
-      throw new ArcanistUsageException(pht('Merge failed!'));
-    }
   }
 
   public function getFinalizedRevisionMessage() {
@@ -1317,19 +1327,6 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
       $commit);
 
     return trim($summary);
-  }
-
-  public function backoutCommit($commit_hash) {
-    $this->execxLocal('revert %s -n --no-edit', $commit_hash);
-    $this->reloadWorkingCopy();
-    if (!$this->getUncommittedStatus()) {
-      throw new ArcanistUsageException(
-        pht('%s has already been reverted.', $commit_hash));
-    }
-  }
-
-  public function getBackoutMessage($commit_hash) {
-    return pht('This reverts commit %s.', $commit_hash);
   }
 
   public function isGitSubversionRepo() {
@@ -1757,6 +1754,71 @@ final class ArcanistGitAPI extends ArcanistRepositoryAPI {
     }
 
     return null;
+  }
+
+  protected function newCurrentCommitSymbol() {
+    return 'HEAD';
+  }
+
+  public function isGitLFSWorkingCopy() {
+
+    // We're going to run:
+    //
+    //   $ git ls-files -z -- ':(attr:filter=lfs)'
+    //
+    // ...and exit as soon as it generates any field terminated with a "\0".
+    //
+    // If this command generates any such output, that means this working copy
+    // contains at least one LFS file, so it's an LFS working copy. If it
+    // exits with no error and no output, this is not an LFS working copy.
+    //
+    // If it exits with an error, we're in trouble.
+
+    $future = $this->buildLocalFuture(
+      array(
+        'ls-files -z -- %s',
+        ':(attr:filter=lfs)',
+      ));
+
+    $lfs_list = id(new LinesOfALargeExecFuture($future))
+      ->setDelimiter("\0");
+
+    try {
+      foreach ($lfs_list as $lfs_file) {
+        // We have our answer, so we can throw the subprocess away.
+        $future->resolveKill();
+        return true;
+      }
+      return false;
+    } catch (CommandException $ex) {
+      // This is probably an older version of Git. Continue below.
+    }
+
+    // In older versions of Git, the first command will fail with an error
+    // ("Invalid pathspec magic..."). See PHI1718.
+    //
+    // Some other tests we could use include:
+    //
+    // (1) Look for ".gitattributes" at the repository root. This approach is
+    // a rough approximation because ".gitattributes" may be global or in a
+    // subdirectory. See D21190.
+    //
+    // (2) Use "git check-attr" and pipe a bunch of files into it, roughly
+    // like this:
+    //
+    //   $ git ls-files -z -- | git check-attr --stdin -z filter --
+    //
+    // However, the best version of this check I could come up with is fairly
+    // slow in even moderately large repositories (~200ms in a repository with
+    // 10K paths). See D21190.
+    //
+    // (3) Use "git lfs ls-files". This is even worse than piping "ls-files"
+    // to "check-attr" in PHP (~600ms in a repository with 10K paths).
+    //
+    // (4) Give up and just assume the repository isn't LFS. This is the
+    // current behavior.
+
+    return false;
   }
 
 }
