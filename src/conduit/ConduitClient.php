@@ -164,9 +164,15 @@ final class ConduitClient extends Phobject {
     // See T13507. If possible, try to compress requests. To compress requests,
     // we must have "gzencode()" available and the server needs to have
     // asserted it has the "gzip" capability.
+    // UBER CODE
+    // atm gzip is not supported
+    /*
     $can_gzip =
       (function_exists('gzencode')) &&
       (isset($this->capabilities['gzip']));
+    */
+    $can_gzip = false;
+    // UBER CODE END
     if ($can_gzip) {
       $gzip_data = phutil_build_http_querystring($data);
       $gzip_data = gzencode($gzip_data);
