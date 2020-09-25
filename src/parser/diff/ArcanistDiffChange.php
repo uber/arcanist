@@ -80,7 +80,7 @@ final class ArcanistDiffChange extends Phobject {
     $obj->newProperties = nonempty(idx($dict, 'newProperties'), array()); // UBER CODE
     $obj->type = $dict['type'];
     $obj->fileType = $dict['fileType'];
-    $obj->commitHash = $dict['commitHash'];
+    $obj->commitHash = idx($dict 'commitHash');
     $obj->hunks = $hunks;
 
     return $obj;
