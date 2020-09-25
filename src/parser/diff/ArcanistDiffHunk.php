@@ -32,15 +32,19 @@ final class ArcanistDiffHunk extends Phobject {
   public static function newFromDictionary(array $dict) {
     $obj = new ArcanistDiffHunk();
 
-    $obj->oldOffset = $dict['oldOffset'];
-    $obj->newOffset = $dict['newOffset'];
-    $obj->oldLength = $dict['oldLength'];
-    $obj->newLength = $dict['newLength'];
-    $obj->addLines = $dict['addLines'];
-    $obj->delLines = $dict['delLines'];
-    $obj->isMissingOldNewline = $dict['isMissingOldNewline'];
-    $obj->isMissingNewNewline = $dict['isMissingNewNewline'];
-    $obj->corpus = $dict['corpus'];
+    // UBER CODE
+    // workaround for clients which do not sent all necessary data and started to fail
+    // after https://secure.phabricator.com/D21044
+    $obj->oldOffset = idx($dict, 'oldOffset');
+    $obj->newOffset = idx($dict, 'newOffset');
+    $obj->oldLength = idx($dict, 'oldLength');
+    $obj->newLength = idx($dict, 'newLength');
+    $obj->addLines = idx($dict, 'addLines');
+    $obj->delLines = idx($dict, 'delLines');
+    $obj->isMissingOldNewline = idx($dict, 'isMissingOldNewline');
+    $obj->isMissingNewNewline = idx($dict, 'isMissingNewNewline');
+    $obj->corpus = idx($dict, 'corpus');
+    // UBER CODE END
 
     return $obj;
   }
