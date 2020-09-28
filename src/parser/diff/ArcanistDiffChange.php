@@ -71,7 +71,7 @@ final class ArcanistDiffChange extends Phobject {
 
     $obj = new ArcanistDiffChange();
     $obj->metadata = $dict['metadata'];
-    $obj->oldPath = $dict['oldPath'];
+    $obj->oldPath = idx($dict, 'oldPath'); // UBER CODE
     $obj->currentPath = $dict['currentPath'];
     // TODO: The backend is shipping down some bogus data, e.g. diff 199453.
     // Should probably clean this up.
@@ -79,7 +79,7 @@ final class ArcanistDiffChange extends Phobject {
     $obj->oldProperties = nonempty(idx($dict, 'oldProperties'), array()); // UBER CODE
     $obj->newProperties = nonempty(idx($dict, 'newProperties'), array()); // UBER CODE
     $obj->type = $dict['type'];
-    $obj->fileType = $dict['fileType'];
+    $obj->fileType = idx($dict, 'fileType', ''); // UBER CODE
     $obj->commitHash = idx($dict, 'commitHash');
     $obj->hunks = $hunks;
 

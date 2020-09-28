@@ -35,12 +35,12 @@ final class ArcanistDiffHunk extends Phobject {
     // UBER CODE
     // workaround for clients which do not sent all necessary data and started to fail
     // after https://secure.phabricator.com/D21044
-    $obj->oldOffset = idx($dict, 'oldOffset');
-    $obj->newOffset = idx($dict, 'newOffset');
-    $obj->oldLength = idx($dict, 'oldLength');
-    $obj->newLength = idx($dict, 'newLength');
-    $obj->addLines = idx($dict, 'addLines');
-    $obj->delLines = idx($dict, 'delLines');
+    $obj->oldOffset = idx($dict, 'oldOffset', 0);
+    $obj->newOffset = idx($dict, 'newOffset', 0);
+    $obj->oldLength = idx($dict, 'oldLength', 0);
+    $obj->newLength = idx($dict, 'newLength', 0);
+    $obj->addLines = idx($dict, 'addLines', 0);
+    $obj->delLines = idx($dict, 'delLines', 0);
     $obj->isMissingOldNewline = idx($dict, 'isMissingOldNewline');
     $obj->isMissingNewNewline = idx($dict, 'isMissingNewNewline');
     $obj->corpus = idx($dict, 'corpus');
