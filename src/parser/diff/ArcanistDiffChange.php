@@ -70,7 +70,7 @@ final class ArcanistDiffChange extends Phobject {
     }
 
     $obj = new ArcanistDiffChange();
-    $obj->metadata = $dict['metadata'];
+    $obj->metadata = nonempty(idx($dict, 'metadata'), array()); // UBER CODE
     $obj->oldPath = idx($dict, 'oldPath'); // UBER CODE
     $obj->currentPath = $dict['currentPath'];
     // TODO: The backend is shipping down some bogus data, e.g. diff 199453.
