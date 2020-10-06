@@ -2133,20 +2133,69 @@ EOTEXT
       if (!$check_task_presence) {
         return false;
       }
-      $tasks = $message->getFieldValue('maniphestTaskPhids');
       $issues = $message->getFieldValue('uber-jira.issues');
-      if ($tasks || $issues) {
+      if ($issues) {
         return false;
       }
-      return phutil_console_confirm(
+      $jiraIssues = $this->getIssuesFromJiraFuture()->start();
+      if (phutil_console_confirm(
         phutil_console_format(
-          '<fg:red>WARNING:</fg> You must associate either Maniphest task or '.
-          'Jira issue with this revision. Do you want to add one?'),
-          $default_no = false);
+          '<fg:red>WARNING:</fg> You must associate Jira issue with this '.
+          'revision. Do you want to add one?'),
+          $default_no = false)) {
+        $this->console->writeOut("%s\n",
+          pht('Fetching issues from jira, patience please.'));
+        list($body, $headers) = $jiraIssues->resolvex();
+        if (empty($body)) {
+          // jira is not available falling back to manual
+          return true;
+        }
+        $issues = phutil_json_decode($body);
+        if (!$issues || empty(idx($issues, 'issues'))) {
+          // TODO: no tasks available or wrong json?
+          return true;
+        }
+        $fzf = id(new UberFZF())
+          ->requireFZF()
+          ->setMulti(50)
+          ->setHeader('Select issue to attach to Differential Revision (use tab for multiple selection)');
+        $issues = idx($issues, 'issues');
+        $issues_for_search = array();
+        foreach ($issues as $issue) {
+          $issues_for_search[] =
+            sprintf("http://t3.uberinternal.com/browse/%s | %s",
+                    $issue['key'], $issue['summary']);
+        }
+        $result = $fzf->fuzzyChoosePrompt($issues_for_search);
+        $issues = array();
+        foreach ($result as $line) {
+          list($issue) = sscanf($line, "http://t3.uberinternal.com/browse/%s |");
+          $issues[] = $issue;
+        }
+        $message->setFieldValue('uber-jira.issues', $issues);
+      }
     } catch (PhutilConsoleStdinNotInteractiveException $e) {
       // do nothing
     }
     return false;
+  }
+
+  private function getIssuesFromJiraFuture() {
+    $usso = new UberUSSO();
+    $token = $usso->maybeUseUSSOToken("arcanist-the-service.uberinternal.com");
+    if (!$token) {
+      $token = $usso->getUSSOToken("arcanist-the-service.uberinternal.com");
+    }
+    $future = id(new HTTPSFuture('https://arcanist-the-service.uberinternal.com/', '{}'))
+      ->setFollowLocation(false)
+      ->setMethod('POST')
+      ->addHeader('Authorization', "Bearer ${token}")
+      ->addHeader('Rpc-Caller', 'arcanist')
+      ->addHeader('Rpc-Encoding', 'json')
+      ->addHeader('Rpc-Service', 'arcanist-the-service')
+      ->addHeader('Rpc-Procedure', 'ArcanistTheService::getIssues')
+      ->addHeader('Rpc-Header-X-Auth-Params-Email', 'arturas@uber.com');
+    return $future;
   }
   // END UBER CODE
 
