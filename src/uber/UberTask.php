@@ -5,7 +5,7 @@ final class UberTask extends Phobject {
   private $future;
   private $issues = false;
 
-  const URL = 'https://arcanist-the-service-staging.uberinternal.com/';
+  const URL = 'https://arcanist-the-service.uberinternal.com/';
 
   public function __construct($jql = '', $url=self::URL) {
     $usso = new UberUSSO();
