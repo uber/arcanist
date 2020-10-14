@@ -7,14 +7,14 @@ final class UberTask extends Phobject {
 
   const URL = 'https://arcanist-the-service.uberinternal.com/';
 
-  public function __construct($jql = '', $url=self::URL) {
+  public function __construct($jql = '', $url = self::URL) {
     $usso = new UberUSSO();
     $hostname = parse_url($url, PHP_URL_HOST);
     $token = $usso->maybeUseUSSOToken($hostname);
     if (!$token) {
       $token = $usso->getUSSOToken($hostname);
     }
-    $payload = "{}";
+    $payload = '{}';
     if ($jql) {
       $payload = json_encode(array('jql' => $jql));
     }

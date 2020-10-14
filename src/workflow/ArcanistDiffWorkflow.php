@@ -2152,16 +2152,16 @@ EOTEXT
           ->setHeader('Select issue to attach to Differential Revision '.
                       '(use tab for multiple selection)');
         $issues_for_search = array();
+        $task_url = 'https://t3.uberinternal.com/browse/';
         foreach ($issues as $issue) {
           $issues_for_search[] =
-            sprintf('http://t3.uberinternal.com/browse/%s | %s',
+            sprintf("${task_url}%s | %s",
                     $issue['key'], $issue['summary']);
         }
         $result = $fzf->fuzzyChoosePrompt($issues_for_search);
         $issues = array();
         foreach ($result as $line) {
-          list($issue) = sscanf($line,
-                                'http://t3.uberinternal.com/browse/%s |');
+          list($issue) = sscanf($line, "${task_url}%s |");
           $issues[] = $issue;
         }
         $message->setFieldValue('uber-jira.issues', $issues);
