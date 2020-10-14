@@ -4,7 +4,7 @@
 final class UberFZF extends Phobject {
   private $multi = 1;
   private $cycle = true;
-  private $header = "";
+  private $header = '';
 
   /**
     * checks if `fzf` tool is available and throws exception if not
@@ -41,19 +41,19 @@ final class UberFZF extends Phobject {
   private function buildFZFCommand() {
     $cmd = array('fzf', '--read0', '--print0');
     $args = array();
-    $cmd[] = "--multi %s";
+    $cmd[] = '--multi %s';
     $args[] = $this->multi;
     if ($this->cycle) {
-      $cmd[] = "--cycle";
+      $cmd[] = '--cycle';
     }
     if ($this->header) {
-      $cmd[] = "--header %s";
+      $cmd[] = '--header %s';
       $args[] = $this->header;
     }
     return array(implode(' ', $cmd), $args);
   }
 
-  public function fuzzyChoosePrompt(&$lines=array()) {
+  public function fuzzyChoosePrompt(&$lines = array()) {
     // temporary place to store all the lines
     $input = new TempFile();
     $result = new TempFile();
@@ -63,15 +63,16 @@ final class UberFZF extends Phobject {
       if (!$firstline) {
         $p_line = "\0".$line;
       }
-      $firstline=false;
+      $firstline = false;
       Filesystem::appendFile($input, $p_line);
     }
     list($cmd, $args) = $this->buildFZFCommand();
     $fzf = id(new PhutilExecPassthru($cmd, ...$args));
     $err = $fzf->execute(
-      array(0=>array("file", strval($input), "r"),
-            1=>array("file", strval($result), "w"),
-            3=>STDERR,
+      array(
+      0 => array('file', (string)$input, 'r'),
+            1 => array('file', (string)$result, 'w'),
+            3 => STDERR,
     ));
     // we ignore error code from fzf and treat it as nothing was selected
     $result = Filesystem::readFile($result);
