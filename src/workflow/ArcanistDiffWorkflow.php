@@ -477,6 +477,13 @@ EOTEXT
 
     if (!$this->shouldOnlyCreateDiff()) {
       $revision = $this->buildRevisionFromCommitMessage($commit_message);
+      // UBER CODE
+      $this->attachJiraIssues($commit_message);
+      $issues = $commit_message->getFieldValue('uber-jira.issues');
+      if ($issues) {
+        $revision['fields']['uber-jira.issues'] = $issues;
+      }
+      // UBER CODE
     }
 
     $this->runCheckPromptResolveScripts();
@@ -1860,11 +1867,7 @@ EOTEXT
           $template);
         $message->pullDataFromConduit($conduit);
         $this->validateCommitMessage($message);
-        // UBER CODE
-        if ($this->isCommitEditRequired($message)) {
-          continue;
-        }
-        // UBER CODE END
+        $this->attachJiraIssues($message); // UBER CODE
         $done = true;
       } catch (ArcanistDifferentialCommitMessageParserException $ex) {
         echo pht('Commit message has errors:')."\n\n";
@@ -2115,15 +2118,11 @@ EOTEXT
     }
   }
 
-  // runs some validation and returns boolean status if user needs
-  // to edit commit message again
-  private function isCommitEditRequired($message) {
-    if (!$message instanceof ArcanistDifferentialCommitMessage) {
-      return false;
-    }
+  // check and if necessary prompts to enter jira tasks
+  private function attachJiraIssues(ArcanistDifferentialCommitMessage $message = null) {
     // atm we do not request automation to add tasks/issues
     if ($this->getArgument('nointeractive')) {
-      return false;
+      return;
     }
     try {
       phutil_console_require_tty();
@@ -2131,11 +2130,11 @@ EOTEXT
       $check_task_presence = $config->getConfigFromAnySource(
         'differential.check_task_presence');
       if (!$check_task_presence) {
-        return false;
+        return;
       }
       $issues = $message->getFieldValue('uber-jira.issues');
       if ($issues) {
-        return false;
+        return;
       }
       $jira = new UberTask();
       if (phutil_console_confirm(
@@ -2169,7 +2168,6 @@ EOTEXT
     } catch (PhutilConsoleStdinNotInteractiveException $e) {
       // do nothing
     }
-    return false;
   }
   // END UBER CODE
 
