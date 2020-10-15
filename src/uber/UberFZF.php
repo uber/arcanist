@@ -2,10 +2,9 @@
 
 // class uses fzf tool to quickly search/filter text
 final class UberFZF extends Phobject {
-  private $multi = 1;
+  private $multi = false;
   private $cycle = true;
   private $header = '';
-  private $tac = true;
 
   /**
     * checks if `fzf` tool is available and throws exception if not
@@ -25,7 +24,7 @@ final class UberFZF extends Phobject {
   }
 
   public function setMulti($multi) {
-    $this->multi = (int)$multi;
+    $this->multi = (bool)$multi;
     return $this;
   }
 
@@ -39,26 +38,18 @@ final class UberFZF extends Phobject {
     return $this;
   }
 
-  // --tac  Reverse the order of the input
-  public function setTac($tac) {
-    $this->tac = $tac;
-    return $this;
-  }
-
   private function buildFZFCommand() {
     $cmd = array('fzf', '--read0', '--print0');
     $args = array();
-    $cmd[] = '--multi %s';
-    $args[] = $this->multi;
+    if ($this->multi) {
+      $cmd[] = '--multi';
+    }
     if ($this->cycle) {
       $cmd[] = '--cycle';
     }
     if ($this->header) {
       $cmd[] = '--header %s';
       $args[] = $this->header;
-    }
-    if ($this->tac) {
-      $cmd[] = '--tac';
     }
     return array(implode(' ', $cmd), $args);
   }
