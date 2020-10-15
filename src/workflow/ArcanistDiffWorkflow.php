@@ -478,10 +478,12 @@ EOTEXT
     if (!$this->shouldOnlyCreateDiff()) {
       $revision = $this->buildRevisionFromCommitMessage($commit_message);
       // UBER CODE
-      $this->attachJiraIssues($commit_message);
-      $issues = $commit_message->getFieldValue('uber-jira.issues');
-      if ($issues) {
-        $revision['fields']['uber-jira.issues'] = $issues;
+      if (!idx($revision['fields'], 'uber-jira.issues')) {
+        $this->attachJiraIssues($commit_message);
+        $issues = $commit_message->getFieldValue('uber-jira.issues');
+        if ($issues) {
+          $revision['fields']['uber-jira.issues'] = $issues;
+        }
       }
       // UBER CODE
     }
@@ -1867,7 +1869,6 @@ EOTEXT
           $template);
         $message->pullDataFromConduit($conduit);
         $this->validateCommitMessage($message);
-        $this->attachJiraIssues($message); // UBER CODE
         $done = true;
       } catch (ArcanistDifferentialCommitMessageParserException $ex) {
         echo pht('Commit message has errors:')."\n\n";
@@ -2136,34 +2137,55 @@ EOTEXT
       if ($issues) {
         return;
       }
-      $jira = new UberTask();
+
       if (phutil_console_confirm(
         phutil_console_format(
           '<fg:red>WARNING:</fg> You must associate Jira issue with this '.
           'revision. Do you want to add one?'),
           $default_no = false)) {
-        $this->console->writeOut("%s\n",
-          pht('Fetching issues from jira, patience please.'));
-        $issues = $jira->getIssues();
-        $fzf = id(new UberFZF())
-          ->requireFZF()
-          ->setMulti(50)
-          ->setHeader('Select issue to attach to Differential Revision '.
-                      '(use tab for multiple selection)');
-        $issues_for_search = array();
-        $task_url = 'https://t3.uberinternal.com/browse/';
-        foreach ($issues as $issue) {
-          $issues_for_search[] =
-            sprintf("${task_url}%s | %s",
-                    $issue['key'], $issue['summary']);
+        while (true) {
+          $jira = new UberTask();
+          $this->console->writeOut("%s\n",
+            pht('Fetching issues from jira, patience please.'));
+          $issues = $jira->getIssues();
+          $fzf = id(new UberFZF())
+            ->requireFZF()
+            ->setMulti(50)
+            ->setHeader('Select issue to attach to Differential Revision '.
+                        '(use tab for multiple selection)');
+          $issues_for_search = array();
+          $task_url = 'https://t3.uberinternal.com/browse/';
+          $create_task_url = 'https://t3.uberinternal.com/secure/'.
+                             'CreateIssue!default.jspa';
+          $refresh_msg = 'Refresh task list';
+          $create_msg = 'Create new task';
+
+          foreach ($issues as $issue) {
+            $issues_for_search[] =
+              sprintf("${task_url}%s | %s",
+                      $issue['key'], $issue['summary']);
+          }
+          $issues_for_search[] = $refresh_msg;
+          $issues_for_search[] = $create_msg;
+          $result = $fzf->fuzzyChoosePrompt($issues_for_search);
+          $issues = array();
+          foreach ($result as $line) {
+            if (trim($line) == $refresh_msg) {
+              continue 2;
+            }
+            if (trim($line) == $create_msg) {
+              // we can add metadata to task
+              $this->openURIsInBrowser(array($create_task_url));
+              if (phutil_console_confirm("Do you want to refresh task list?", $default_no=false)) {
+                continue 2;
+              }
+            }
+            list($issue) = sscanf($line, "${task_url}%s |");
+            $issues[] = $issue;
+          }
+          $message->setFieldValue('uber-jira.issues', $issues);
+          break;
         }
-        $result = $fzf->fuzzyChoosePrompt($issues_for_search);
-        $issues = array();
-        foreach ($result as $line) {
-          list($issue) = sscanf($line, "${task_url}%s |");
-          $issues[] = $issue;
-        }
-        $message->setFieldValue('uber-jira.issues', $issues);
       }
     } catch (PhutilConsoleStdinNotInteractiveException $e) {
       // do nothing
