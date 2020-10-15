@@ -2177,11 +2177,15 @@ EOTEXT
               // we can add metadata to task
               $this->openURIsInBrowser(array($create_task_url));
               if (phutil_console_confirm("Do you want to refresh task list?", $default_no=false)) {
+                // repeat whole outer loop
                 continue 2;
               }
+              continue;
             }
             list($issue) = sscanf($line, "${task_url}%s |");
-            $issues[] = $issue;
+            if ($issue) {
+              $issues[] = $issue;
+            }
           }
           $message->setFieldValue('uber-jira.issues', $issues);
           break;
