@@ -2160,13 +2160,13 @@ EOTEXT
           $refresh_msg = 'Refresh task list';
           $create_msg = 'Create new task';
 
+          $issues_for_search[] = $create_msg;
+          $issues_for_search[] = $refresh_msg;
           foreach ($issues as $issue) {
             $issues_for_search[] =
               sprintf("${task_url}%s | %s",
                       $issue['key'], $issue['summary']);
           }
-          $issues_for_search[] = $refresh_msg;
-          $issues_for_search[] = $create_msg;
           $result = $fzf->fuzzyChoosePrompt($issues_for_search);
           $issues = array();
           foreach ($result as $line) {
