@@ -6,6 +6,9 @@ final class UberTask extends Phobject {
   private $issues = false;
 
   const URL = 'https://arcanist-the-service.uberinternal.com/';
+  const JIRA_CREATE_URL = 'https://t3.uberinternal.com/secure/'.
+    'CreateIssueDetails!init.jspa?pid=%s&issuetype=10002&assignee=%s'.
+    '&summary=%s&description=%s';
 
   public function __construct($jql = '', $url = self::URL) {
     $usso = new UberUSSO();
@@ -45,5 +48,18 @@ final class UberTask extends Phobject {
     }
     $this->issues = idx($issues, 'issues', array());
     return $this->issues;
+  }
+
+  public static function getJiraCreateIssueLink(
+    $project_pid,
+    $assignee,
+    $summary,
+    $description) {
+
+    return sprintf(self::JIRA_CREATE_URL,
+                   urlencode($project_pid),
+                   urlencode($assignee),
+                   urlencode($summary),
+                   urlencode($description));
   }
 }
