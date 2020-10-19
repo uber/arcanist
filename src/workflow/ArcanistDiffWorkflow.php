@@ -2157,14 +2157,6 @@ EOTEXT
       return;
     }
 
-    if (!phutil_console_confirm(
-        phutil_console_format(
-          '<fg:red>WARNING:</fg> You must associate Jira issue with this '.
-          'revision. Do you want to add one?'),
-          $default_no = false)) {
-      return;
-    }
-
     while (true) {
       $jira = new UberTask();
       $this->console->writeOut("%s\n",
