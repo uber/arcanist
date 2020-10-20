@@ -487,8 +487,23 @@ EOTEXT
       $revision = $this->buildRevisionFromCommitMessage($commit_message);
       // UBER CODE
       if (!idx($revision['fields'], 'uber-jira.issues')) {
-        $this->attachJiraIssues($commit_message);
-        $issues = $commit_message->getFieldValue('uber-jira.issues');
+        $issues = array();
+        if (!idx($revision, 'id', false)) {
+          $issues = $this->readScratchJSONFile('create-message-jira-issues.json');
+        } else {
+          $issues = $this->readScratchJSONFile(sprintf('D%s-jira-issues.json', $revision['id']));
+        }
+        if (empty($issues)) {
+          $this->attachJiraIssues($commit_message);
+          $issues = $commit_message->getFieldValue('uber-jira.issues');
+          if ($issues) {
+            if (!idx($revision, 'id', false)) {
+              $this->writeScratchJSONFile('create-message-jira-issues.json', $issues);
+            } else {
+              $this->writeScratchJSONFile(sprintf('D%s-jira-issues.json', $revision['id']), $issues);
+            }
+          }
+        }
         if ($issues) {
           $revision['fields']['uber-jira.issues'] = $issues;
         }
@@ -682,6 +697,9 @@ EOTEXT
       if ($this->shouldOpenCreatedObjectsInBrowser()) {
         $this->openURIsInBrowser(array($uri));
       }
+      if (idx($revision, 'id')) {
+        $this->removeScratchFile(sprintf('D%s-jira-issues.json', $revision['id']));
+      }
     }
 
     echo pht('Included changes:')."\n";
@@ -694,6 +712,7 @@ EOTEXT
     }
 
     $this->removeScratchFile('create-message');
+    $this->removeScratchFile('create-message-jira-issues.json'); // UBER CODE
 
     return 0;
   }
@@ -2158,15 +2177,17 @@ EOTEXT
     }
 
     while (true) {
-      $jira = new UberTask();
-      $this->console->writeOut("%s\n",
-        pht('Fetching issues from jira, patience please.'));
-      $issues = $jira->getIssues();
       $fzf = id(new UberFZF())
         ->requireFZF()
         ->setMulti(50)
         ->setHeader('Select issue to attach to Differential Revision '.
                     '(use tab for multiple selection)');
+
+      $jira = new UberTask();
+      $this->console->writeOut("%s\n",
+        pht('Fetching issues from jira, patience please.'));
+      $issues = $jira->getIssues();
+
       $for_search = array();
       $projects = array();
 
