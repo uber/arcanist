@@ -23,14 +23,6 @@ final class ArcanistDiffWorkflow extends ArcanistDiffBasedWorkflow {
   private $hitAutotargets;
   private $uberRefProvider; // UBER CODE
 
-  // UBER CODE
-  const TASK_MSG = 'https://t3.uberinternal.com/browse/%s | %s';
-  const REFRESH_MSG = 'Refresh task list';
-  const SKIP_MSG = 'Skip issue attachment';
-  const CREATE_IN_PROJ_MSG = 'Create new task in %s';
-  const CREATE_MSG = 'Create new task';
-  // UBER CODE END
-
   public function getWorkflowName() {
     return 'diff';
   }
@@ -2169,7 +2161,7 @@ EOTEXT
     }
     $config = $this->getConfigurationManager();
     $check_task_presence = $config->getConfigFromAnySource(
-      'differential.check_task_presence');
+      'differential.lookup-jira-issues');
     if (!$check_task_presence) {
       return;
     }
@@ -2179,102 +2171,15 @@ EOTEXT
       return;
     }
 
-    while (true) {
-      $fzf = id(new UberFZF())
-        ->requireFZF()
-        ->setMulti(50)
-        ->setHeader('Select issue to attach to Differential Revision '.
-                    '(use tab for multiple selection)');
+    $jira = new UberTask(
+      $this->console,
+      function ($uris) { return $this->openURIsInBrowser($uris);},
+      $this->getConduit(),
+    );
 
-      $jira = new UberTask();
-      $this->console->writeOut("%s\n",
-        pht('Fetching issues from jira, patience please.'));
-      $issues = null;
-      try {
-        $issues = $jira->getIssues();
-      } catch (Throwable $e) {
-        echo tsprintf("Something is wrong with jira, skipping...\n\n");
-        return;
-      }
-      $for_search = array();
-
-      list($tasks, $projects) = UberTask::getTasksAndProjects($issues);
-      // add tasks to search list
-      foreach ($tasks as $task) {
-        $for_search[] = sprintf(self::TASK_MSG, $task['key'], $task['summary']);
-      }
-      // add refresh message
-      $for_search[] = self::REFRESH_MSG;
-      // need for way out in case user doesn't try using ESC/Ctrl+c/Ctfl+d
-      $for_search[] = self::SKIP_MSG;
-      $for_search[] = self::CREATE_MSG;
-      // get top 3 projects to display
-      uasort($projects,
-        function ($v1, $v2) {
-          return $v2['tasks'] - $v1['tasks'];
-      });
-      $projects = array_slice($projects, 0, 3);
-      foreach ($projects as $project => $v) {
-        $for_search[] = sprintf(self::CREATE_IN_PROJ_MSG, $project);
-      }
-      $result = $fzf->fuzzyChoosePrompt($for_search);
-
-      $issues = array();
-      $project_urls = array();
-      foreach ($result as $line) {
-        // restart whole outer loop
-        if (trim($line) == self::REFRESH_MSG) {
-          continue 2;
-        }
-        if (trim($line) == self::SKIP_MSG) {
-          return;
-        }
-        if (trim($line) == self::CREATE_MSG) {
-          $this->openURIsInBrowser(array(UberTask::JIRA_CREATE_URL));
-          if (phutil_console_confirm('Do you want to refresh task list?',
-                                     $default_no = false)) {
-            continue 2;
-          }
-          return;
-        }
-
-        list($issue) = sscanf($line, self::TASK_MSG);
-        if ($issue) {
-          $issues[] = $issue;
-        }
-
-        list($project) = sscanf($line, self::CREATE_IN_PROJ_MSG);
-        if ($project) {
-          static $email = null;
-          if (!$email) {
-            $result = $this->getConduit()->callMethodSynchronous(
-              'user.whoami',
-               array());
-            $email = $result['primaryEmail'];
-          }
-          $summary = $message->getFieldValue('title');
-          $description = $message->getFieldValue('summary');
-          $url = UberTask::getJiraCreateIssueLink(
-            $projects[$project]['id'],
-            $email,
-            // adding noise to make sure engineer puts some effort and
-            // intent into task
-            '[AutoCreate] '.$summary,
-            "Autocreated task description:\n".$description);
-          $project_urls[] = $url;
-        }
-      }
-      if (!empty($project_urls)) {
-        $this->openURIsInBrowser($project_urls);
-        if (phutil_console_confirm('Do you want to refresh task list?',
-                                   $default_no = false)) {
-          continue;
-        }
-      }
-      if (!empty($issues)) {
-        $message->setFieldValue('uber-jira.issues', $issues);
-      }
-      break;
+    $issues = $jira->getJiraIssuesForAttachment($message);
+    if (!empty($issues)) {
+      $message->setFieldValue('uber-jira.issues', $issues);
     }
   }
   // END UBER CODE
