@@ -27,7 +27,7 @@ final class ArcanistDiffWorkflow extends ArcanistDiffBasedWorkflow {
   const TASK_MSG = 'https://t3.uberinternal.com/browse/%s | %s';
   const REFRESH_MSG = 'Refresh task list';
   const SKIP_MSG = 'Skip issue attachment';
-  const CREATE_IN_MSG = 'Create new task in %s';
+  const CREATE_IN_PROJ_MSG = 'Create new task in %s';
   const CREATE_MSG = 'Create new task';
   // UBER CODE END
 
@@ -2200,10 +2200,10 @@ EOTEXT
 
       list($tasks, $projects) = UberTask::getTasksAndProjects($issues);
       // add tasks to search list
-      $for_search =  array_map(function($v) {
-          return sprintf(self::TASK_MSG, $v['key'], $v['summary']);},
-        $tasks);
-
+      foreach ($tasks as $task) {
+        $for_search[] = sprintf(self::TASK_MSG, $task['key'], $task['summary']);
+      }
+      // add refresh message
       $for_search[] = self::REFRESH_MSG;
       // need for way out in case user doesn't try using ESC/Ctrl+c/Ctfl+d
       $for_search[] = self::SKIP_MSG;
@@ -2215,7 +2215,7 @@ EOTEXT
       });
       $projects = array_slice($projects, 0, 3);
       foreach ($projects as $project => $v) {
-        $for_search[] = sprintf(self::CREATE_IN_MSG, $project);
+        $for_search[] = sprintf(self::CREATE_IN_PROJ_MSG, $project);
       }
       $result = $fzf->fuzzyChoosePrompt($for_search);
 
@@ -2243,7 +2243,7 @@ EOTEXT
           $issues[] = $issue;
         }
 
-        list($project) = sscanf($line, self::CREATE_IN_MSG);
+        list($project) = sscanf($line, self::CREATE_IN_PROJ_MSG);
         if ($project) {
           static $email = null;
           if (!$email) {
