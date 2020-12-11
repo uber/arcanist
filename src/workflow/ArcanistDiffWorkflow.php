@@ -488,6 +488,7 @@ EOTEXT
       // UBER CODE
       if (!idx($revision['fields'], 'uber-jira.issues')) {
         $issues = array();
+        // read from scratch files maybe user already chose issues
         if (!idx($revision, 'id', false)) {
           $issues = $this->readScratchJSONFile('create-message-jira-issues.json');
         } else {
@@ -697,9 +698,11 @@ EOTEXT
       if ($this->shouldOpenCreatedObjectsInBrowser()) {
         $this->openURIsInBrowser(array($uri));
       }
+      // UBER CODE
       if (idx($revision, 'id')) {
         $this->removeScratchFile(sprintf('D%s-jira-issues.json', $revision['id']));
       }
+      // UBER CODE END
     }
 
     echo pht('Included changes:')."\n";
@@ -2194,30 +2197,21 @@ EOTEXT
         return;
       }
       $for_search = array();
-      $projects = array();
 
-      foreach ($issues as $issue) {
-        $pkey = $issue['project']['key'];
-        if (!isset($projects[$pkey])) {
-          $projects[$pkey] = array(
-            'id' => $issue['project']['id'],
-            'tasks' => 0,
-          );
-        }
-        $projects[$pkey]['tasks']++;
+      list($tasks, $projects) = UberTask::getTasksAndProjects($issues);
+      // add tasks to search list
+      $for_search =  array_map(function($v) {
+          return sprintf(self::TASK_MSG, $v['key'], $v['summary']);},
+        $tasks);
 
-        $for_search[] = sprintf(self::TASK_MSG,
-                                $issue['key'],
-                                $issue['summary']);
-      }
       $for_search[] = self::REFRESH_MSG;
       // need for way out in case user doesn't try using ESC/Ctrl+c/Ctfl+d
       $for_search[] = self::SKIP_MSG;
       $for_search[] = self::CREATE_MSG;
-      // get top 3 projects
+      // get top 3 projects to display
       uasort($projects,
         function ($v1, $v2) {
-          return $v1['tasks'] - $v2['tasks'];
+          return $v2['tasks'] - $v1['tasks'];
       });
       $projects = array_slice($projects, 0, 3);
       foreach ($projects as $project => $v) {
@@ -2228,6 +2222,7 @@ EOTEXT
       $issues = array();
       $project_urls = array();
       foreach ($result as $line) {
+        // restart whole outer loop
         if (trim($line) == self::REFRESH_MSG) {
           continue 2;
         }
