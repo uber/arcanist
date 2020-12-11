@@ -2186,8 +2186,13 @@ EOTEXT
       $jira = new UberTask();
       $this->console->writeOut("%s\n",
         pht('Fetching issues from jira, patience please.'));
-      $issues = $jira->getIssues();
-
+      $issues = null;
+      try {
+        $issues = $jira->getIssues();
+      } catch (Throwable $e) {
+        echo tsprintf("Something is wrong with jira, skipping...\n\n");
+        return;
+      }
       $for_search = array();
       $projects = array();
 
