@@ -64,4 +64,22 @@ final class UberTask extends Phobject {
                    urlencode($summary),
                    urlencode($description));
   }
+
+  public static function getTasksAndProjects($issues = array()) {
+    $tasks = array();
+    $projects = array();
+
+    foreach ($issues as $issue) {
+      $pkey = $issue['project']['key'];
+      if (!isset($projects[$pkey])) {
+        $projects[$pkey] = array(
+          'id' => $issue['project']['id'],
+          'tasks' => 0,
+        );
+      }
+      $projects[$pkey]['tasks']++;
+      $tasks[] = array('key' => $issue['key'], 'summary' => $issue['summary']);
+    }
+    return array($tasks, $projects);
+  }
 }
