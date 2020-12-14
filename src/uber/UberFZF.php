@@ -3,7 +3,6 @@
 // class uses fzf tool to quickly search/filter text
 final class UberFZF extends Phobject {
   private $multi = false;
-  private $cycle = true;
   private $header = '';
 
   /**
