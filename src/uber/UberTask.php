@@ -67,6 +67,14 @@ final class UberTask extends Phobject {
                    urlencode($description));
   }
 
+  public function openURIsInBrowser($uris) {
+    call_user_func($this->openURIsInBrowserFunc, $uris);
+  }
+
+  public function getConduit() {
+    return $this->conduit;
+  }
+
   public static function getTasksAndProjects($issues = array()) {
     $tasks = array();
     $projects = array();
@@ -85,22 +93,8 @@ final class UberTask extends Phobject {
     return array($tasks, $projects);
   }
 
-  public function openURIsInBrowser($uris) {
-    call_user_func($this->openURIsInBrowserFunc, $uris);
-  }
-
-  public function getConduit() {
-    return $this->conduit;
-  }
-
   public function getJiraIssuesForAttachment($message) {
     while (true) {
-      $fzf = id(new UberFZF())
-        ->requireFZF()
-        ->setMulti(50)
-        ->setHeader('Select issue to attach to Differential Revision '.
-                    '(use tab for multiple selection)');
-
       $this->console->writeOut(pht('Fetching issues from jira, patience please.')."\n");
       $issues = array();
       try {
@@ -128,10 +122,17 @@ final class UberTask extends Phobject {
           return $v2['tasks'] - $v1['tasks'];
       });
       $projects = array_slice($projects, 0, 3);
+      // attach create task in project XXX to the list
       foreach ($projects as $project => $v) {
         $for_search[] = sprintf(self::CREATE_IN_PROJ_MSG, $project);
       }
+
       // prompt user to choose from menu
+      $fzf = id(new UberFZF())
+        ->requireFZF()
+        ->setMulti(50)
+        ->setHeader('Select issue to attach to Differential Revision '.
+                    '(use tab for multiple selection)');
       $result = $fzf->fuzzyChoosePrompt($for_search);
 
       $issues = array();
@@ -152,11 +153,12 @@ final class UberTask extends Phobject {
           }
           return;
         }
+        // fetch chosen tasks
         list($issue) = sscanf($line, self::TASK_MSG);
         if ($issue) {
           $issues[] = $issue;
         }
-
+        // fetch projects where user want to create task
         list($project) = sscanf($line, self::CREATE_IN_PROJ_MSG);
         if ($project) {
           static $email = null;
@@ -172,7 +174,7 @@ final class UberTask extends Phobject {
             $projects[$project]['id'],
             $email,
             // adding noise to make sure engineer puts some effort and
-            // intent into task
+            // intent into issue creation
             '[AutoCreate] '.$summary,
             "Autocreated task description:\n".$description);
           $project_urls[] = $url;
