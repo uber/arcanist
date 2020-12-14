@@ -478,7 +478,6 @@ EOTEXT
     if (!$this->shouldOnlyCreateDiff()) {
       $revision = $this->buildRevisionFromCommitMessage($commit_message);
       $this->attachJiraIssues($revision, $commit_message); // UBER CODE
-
     }
 
     $this->runCheckPromptResolveScripts();
