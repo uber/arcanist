@@ -28,11 +28,6 @@ final class UberFZF extends Phobject {
     return $this;
   }
 
-  public function setCycle($cycle) {
-    $this->cycle = (bool)$cycle;
-    return $this;
-  }
-
   public function setHeader($header) {
     $this->header = $header;
     return $this;
@@ -41,12 +36,11 @@ final class UberFZF extends Phobject {
   private function buildFZFCommand() {
     $cmd = array('fzf', '--read0', '--print0');
     $args = array();
+
     if ($this->multi) {
       $cmd[] = '--multi';
     }
-    if ($this->cycle) {
-      $cmd[] = '--cycle';
-    }
+
     if ($this->header) {
       $cmd[] = '--header %s';
       $args[] = $this->header;
