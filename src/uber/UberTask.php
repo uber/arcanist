@@ -3,27 +3,22 @@
 // class which encapsulates complexity of getting jira issue
 final class UberTask extends Phobject {
   private $console;
-  private $conduit;
-  private $openURIsInBrowserFunc;
+  private $workflow;
   private $jql;
   private $url;
 
   const URL = 'https://arcanist-the-service.uberinternal.com/';
-  const JIRA_CREATE_IN_URL = 'https://t3.uberinternal.com/secure/'.
-    'CreateIssueDetails!init.jspa?pid=%s&issuetype=10002&assignee=%s'.
-    '&summary=%s&description=%s';
-  const JIRA_CREATE_URL = 'https://t3.uberinternal.com/secure/CreateIssue'.
-    '!default.jspa';
+  const JIRA_CREATE_IN_URL = 'https://t3.uberinternal.com/secure/CreateIssueDetails!init.jspa?pid=%s&issuetype=10002&assignee=%s&summary=%s&description=%s';
+  const JIRA_CREATE_URL = 'https://t3.uberinternal.com/secure/CreateIssue!default.jspa';
   const TASK_MSG = 'https://t3.uberinternal.com/browse/%s | %s';
   const REFRESH_MSG = 'Refresh task list';
   const SKIP_MSG = 'Skip issue attachment';
   const CREATE_IN_PROJ_MSG = 'Create new task in %s';
   const CREATE_MSG = 'Create new task';
 
-  public function __construct($console, $openURIsInBrowserFunc, $conduit, $jql = '', $url = self::URL) {
-    $this->console = $console;
-    $this->openURIsInBrowserFunc = $openURIsInBrowserFunc;
-    $this->conduit = $conduit;
+  public function __construct(ArcanistWorkflow $workflow, $jql = '', $url = self::URL) {
+    $this->console = PhutilConsole::getConsole();
+    $this->workflow = $workflow;
     $this->jql = $jql;
     $this->url = $url;
   }
@@ -37,7 +32,7 @@ final class UberTask extends Phobject {
     }
     $payload = '{}';
     if ($this->jql) {
-      $payload = json_encode(array('jql' => $jql));
+      $payload = json_encode(array('jql' => $this->jql));
     }
     $future = id(new HTTPSFuture($this->url, $payload))
       ->setFollowLocation(false)
@@ -67,12 +62,12 @@ final class UberTask extends Phobject {
                    urlencode($description));
   }
 
-  public function openURIsInBrowser($uris) {
-    call_user_func($this->openURIsInBrowserFunc, $uris);
+  public function getConduit() {
+    return $this->workflow->getConduit();
   }
 
-  public function getConduit() {
-    return $this->conduit;
+  public function openURIsInBrowser($uris) {
+    return $this->workflow->openURIsInBrowser($uris);
   }
 
   public static function getTasksAndProjects($issues = array()) {

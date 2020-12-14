@@ -2168,11 +2168,7 @@ EOTEXT
       return;
     }
 
-    $jira = new UberTask(
-      $this->console,
-      function ($uris) { return $this->openURIsInBrowser($uris);},
-      $this->getConduit(),
-    );
+    $jira = new UberTask($this);
     $issues = $jira->getJiraIssuesForAttachment($message);
 
     if (!empty($issues)) {
