@@ -341,8 +341,7 @@ final class UberArcanistStackSubmitQueueEngine
       ->getUntrackedChanges();
     if ($untracked) {
       throw new ArcanistUsageException(pht(
-        'Repository contains untracked changes, stash them otherwise land '.
-        'might fail'));
+        'Repository contains untracked changes, stash it!'));
     }
     $prevRestoreFlag = $this->restoreWhenDestroyed;
     $this->restoreWhenDestroyed = false;
