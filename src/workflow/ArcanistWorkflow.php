@@ -743,7 +743,7 @@ abstract class ArcanistWorkflow extends Phobject {
     return $this->workingDirectory;
   }
 
-  final private function setParentWorkflow($parent_workflow) {
+  private function setParentWorkflow($parent_workflow) {
     $this->parentWorkflow = $parent_workflow;
     return $this;
   }
@@ -1392,7 +1392,7 @@ abstract class ArcanistWorkflow extends Phobject {
     ));
   }
 
-  final private function loadBundleFromConduit(
+  private function loadBundleFromConduit(
     ConduitClient $conduit,
     $params) {
 
