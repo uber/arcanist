@@ -77,6 +77,17 @@ final class ArcanistConduitEngine
       $token = $this->getConduitToken();
       if ($token) {
         $client->setConduitToken($this->getConduitToken());
+        // UBER CODE
+        $usso = new UberUSSO();
+        $usso->enhanceConduitClient($client);
+        try {
+          $result = $client->callMethodSynchronous(
+            'user.whoami',
+            array());
+        } catch (HTTPFutureHTTPResponseStatus $ex) {
+          $usso->enhanceConduitClient($conduit, $ex);
+        } catch (Throwable $ex) {
+        }
       }
 
       $this->client = $client;
