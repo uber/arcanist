@@ -366,6 +366,8 @@ phutil_register_library_map(array(
     'ArcanistParenthesesSpacingXHPASTLinterRuleTestCase' => 'lint/linter/xhpast/rules/__tests__/ArcanistParenthesesSpacingXHPASTLinterRuleTestCase.php',
     'ArcanistParseStrUseXHPASTLinterRule' => 'lint/linter/xhpast/rules/ArcanistParseStrUseXHPASTLinterRule.php',
     'ArcanistParseStrUseXHPASTLinterRuleTestCase' => 'lint/linter/xhpast/rules/__tests__/ArcanistParseStrUseXHPASTLinterRuleTestCase.php',
+    'ArcanistPartialCatchXHPASTLinterRule' => 'lint/linter/xhpast/rules/ArcanistPartialCatchXHPASTLinterRule.php',
+    'ArcanistPartialCatchXHPASTLinterRuleTestCase' => 'lint/linter/xhpast/rules/__tests__/ArcanistPartialCatchXHPASTLinterRuleTestCase.php',
     'ArcanistPasteRef' => 'ref/paste/ArcanistPasteRef.php',
     'ArcanistPasteSymbolRef' => 'ref/paste/ArcanistPasteSymbolRef.php',
     'ArcanistPasteWorkflow' => 'workflow/ArcanistPasteWorkflow.php',
@@ -1455,6 +1457,8 @@ phutil_register_library_map(array(
     'ArcanistParenthesesSpacingXHPASTLinterRuleTestCase' => 'ArcanistXHPASTLinterRuleTestCase',
     'ArcanistParseStrUseXHPASTLinterRule' => 'ArcanistXHPASTLinterRule',
     'ArcanistParseStrUseXHPASTLinterRuleTestCase' => 'ArcanistXHPASTLinterRuleTestCase',
+    'ArcanistPartialCatchXHPASTLinterRule' => 'ArcanistXHPASTLinterRule',
+    'ArcanistPartialCatchXHPASTLinterRuleTestCase' => 'ArcanistXHPASTLinterRuleTestCase',
     'ArcanistPasteRef' => array(
       'ArcanistRef',
       'ArcanistDisplayRefInterface',
