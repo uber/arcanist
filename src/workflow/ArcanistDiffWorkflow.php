@@ -2150,14 +2150,9 @@ EOTEXT
 
     $config = $this->getConfigurationManager();
     $lookup_issues = $config->getConfigFromAnySource(
-      'uber.differential.lookup-jira-issues');
+      'differential.lookup-jira-issues');
     if (!$lookup_issues) {
-      // compatibility
-      $lookup_issues = $config->getConfigFromAnySource(
-        'differential.lookup-jira-issues');
-      if (!$lookup_issues) {
-        return;
-      }
+      return;
     }
 
     $issues = array();
