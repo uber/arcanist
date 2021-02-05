@@ -275,7 +275,7 @@ final class ArcanistSettings extends Phobject {
           'If true, arc will use non-tag refs for base and diff, both during arc diff and arc patch'),
         'default' => false,
       ),
-      'uber.differential.lookup-jira-issues' => array(
+      'differential.lookup-jira-issues' => array(
         'type' => 'bool',
         'help' => pht(
           'If true, arc will query jira for issues and display it for user selection'),
