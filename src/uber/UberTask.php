@@ -126,8 +126,8 @@ final class UberTask extends Phobject {
       $fzf = id(new UberFZF());
       if (!$fzf->isFZFAvailable()) {
         $this->console->writeOut(
-          "<bg:red>** %s **</bg>\n<bg:red>** %s **</bg>\n"
-          "<bg:red>** %s **</bg> %s\n"
+          "<bg:red>** %s **</bg>\n<bg:red>** %s **</bg>\n".
+          "<bg:red>** %s **</bg> %s\n".
           "<bg:red>** %s **</bg>\n<bg:red>** %s **</bg>\n",
           pht('WARNING'),
           pht('WARNING'),
