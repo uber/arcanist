@@ -2162,7 +2162,7 @@ EOTEXT
     if ($branch !== null) {
       if (preg_match('/^([A-Z][A-Z0-9]*-[1-9]\d*)/', $branch)) {
         $this->console->writeOut("%s\n",
-          pht('Diff branch contain JIRA alike task, '.
+          pht('Revision branch contains JIRA alike task, '.
               'skipping jira quick search'));
         return;
       }
