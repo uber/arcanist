@@ -518,7 +518,7 @@ EOTEXT
       'changes' => mpull($changes, 'toDictionary'),
       'lintStatus' => $this->getLintStatus($lint_result),
       'unitStatus' => $this->getUnitStatus($unit_result),
-    ) + $diff_spec;
+    ) + $diff_spec; // UBER CODE
 
     $conduit = $this->getConduit();
     $diff_info = $conduit->callMethodSynchronous(
