@@ -149,6 +149,7 @@ final class UberTask extends Phobject {
         return;
       }
 
+      // first item is query which was entered (if any)
       $query = $result[0];
       $result = array_slice($result, 1);
       $issues = array();
