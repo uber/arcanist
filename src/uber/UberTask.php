@@ -141,13 +141,16 @@ final class UberTask extends Phobject {
       }
       $fzf->setMulti(50)
         ->setHeader('Select issue to attach to Differential Revision '.
-                    '(use tab for multiple selection)');
+                    '(use tab for multiple selection)')
+        ->setPrintQuery(true);
       $result = $fzf->fuzzyChoosePrompt($for_search);
       if (empty($result)) {
         // nothing was chosen (ctrl+d, ctrl+c)
         return;
       }
 
+      $query = $result[0];
+      $result = array_slice($result, 1);
       $issues = array();
       $project_urls = array();
       foreach ($result as $line) {
@@ -202,6 +205,13 @@ final class UberTask extends Phobject {
       }
       if (!empty($issues)) {
         return $issues;
+      } else {
+        $matches = array();
+        if (preg_match('/^([A-Z][A-Z0-9]*-[1-9]\d*)/',
+          $query,
+          $matches) !== 0) {
+          return $matches;
+        }
       }
     }
   }
