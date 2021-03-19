@@ -90,8 +90,9 @@ final class UberFZF extends Phobject {
     // we ignore error code from fzf and treat it as nothing was selected
     $result = Filesystem::readFile($result);
     if ($result != '') {
-      // fzf returns which looks like line\0line\0 - last line still terminates
-      // with \0 so explode will return empty line for last item, we remove it
+      // fzf returns result which looks like line\0line\0 - last line still
+      // terminates with \0 so explode will return empty line for last item,
+      // we remove it
       $result = explode("\0", $result);
       array_pop($result);
       return $result;
