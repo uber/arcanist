@@ -207,10 +207,10 @@ final class UberTask extends Phobject {
         return $issues;
       } else {
         $matches = array();
-        if (preg_match('/^([A-Z][A-Z0-9]*-[1-9]\d*)/',
+        if (preg_match_all('/([A-Z][A-Z0-9]*-[1-9]\d*)/',
           $query,
           $matches) !== 0) {
-          return $matches;
+          return idx($matches, 0);
         }
       }
     }
