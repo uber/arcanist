@@ -2,10 +2,10 @@
 
 // simple parser which treats first non empty line as issue title and
 // description starts from next non empty line and goes until end of
-// input or when comment starts (last block with `# ` is treated as
+// input or when comment starts (last block with `#` is treated as
 // comment).
 final class UberJiraIssueMessageParser extends Phobject {
-   const COMMENT = '# ';
+   const COMMENT = '#';
 
    private function __construct() {}
 
@@ -35,7 +35,7 @@ final class UberJiraIssueMessageParser extends Phobject {
        $line = array_pop($description);
        $comment_detected = false;
        while (($line == '' && !$comment_detected) ||
-         strncmp($line, self::COMMENT, 2) == 0) {
+         strncmp($line, self::COMMENT, 1) == 0) {
 
          $comment_detected |= strncmp($line, self::COMMENT, 2) == 0;
          $line = array_pop($description);
