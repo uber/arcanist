@@ -212,7 +212,7 @@ final class UberTask extends Phobject {
             $this->getTaskTemplate(), $title, $description, $project);
           while (true) {
             // todo use preffered editor if necessary
-            $editor = new PhutilInteractiveEditor($content);
+            $editor = $this->newInteractiveEditor($content);
             $content = $editor->setName('new-task')->editInteractively();
             $parsed = UberJiraIssueMessageParser::parse($content);
             $title = $parsed['title'];
@@ -262,5 +262,16 @@ final class UberTask extends Phobject {
         }
       }
     }
+  }
+
+  final protected function newInteractiveEditor($text) {
+    $editor = new PhutilInteractiveEditor($text);
+
+    $preferred = $this->workflow->getConfigFromAnySource('editor');
+    if ($preferred) {
+      $editor->setPreferredEditor($preferred);
+    }
+
+    return $editor;
   }
 }
