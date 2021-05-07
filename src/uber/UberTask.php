@@ -244,9 +244,11 @@ final class UberTask extends Phobject {
                   'description' => $description,
                 ));
             $issues[] = $jira_issue['key'];
+            $issue_url = sprintf(self::ISSUE_URL, $jira_issue['key']);
             $this->console
               ->writeOut(pht("Jira issue %s created\n",
-                  sprintf(self::ISSUE_URL, $jira_issue['key'])));
+                  $issue_url));
+            $this->openURIsInBrowser(array($issue_url));
             break;
           }
         }
