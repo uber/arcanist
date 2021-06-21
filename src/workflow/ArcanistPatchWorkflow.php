@@ -1299,7 +1299,7 @@ EOTEXT
       $remotes = array_merge($remotes, array_filter(explode(PHP_EOL, $stdin)));
     }
     foreach ($remotes as $remote) {
-      $repository_api->execManualLocal('fetch --no-tags --depth=1 %s %s', $remote, $hash);
+      $repository_api->execManualLocal('fetch --depth=1 %s %s', $remote, $hash);
       if ($repository_api->hasLocalCommit($hash)) {
         break;
       }
