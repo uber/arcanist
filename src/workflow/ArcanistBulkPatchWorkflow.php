@@ -1,5 +1,4 @@
 <?php
-// UBER CODE
 /**
  * Applies changes from one or more Differentials to the current working copy.
  */
@@ -147,6 +146,7 @@ EOTEXT
     }
 
     // Eagerly load diffs to check valid args passed
+    // TOOD: Use futures to fetch in parallel
     $this->authenticateConduit();
     foreach ($this->allDiffIds as $diffId) {
       $bundle = $this->loadDiffBundleFromConduit(
@@ -181,7 +181,7 @@ EOTEXT
       $baseDiffs = implode(" ", $this->baseDiffIds);
       $commit_message = sprintf('Applied diffs: %s', $baseDiffs);
       $future = $repository_api->execFutureLocal(
-        'commit -a -F -');
+        'commit --allow-empty -a -F -');
       $future->write($commit_message);
       $future->resolvex();
 
@@ -336,68 +336,23 @@ EOTEXT
   private function getCommitMessage(ArcanistBundle $bundle) {
     $revision_id    = $bundle->getRevisionID();
     $commit_message = null;
-    $prompt_message = null;
 
-    // if we have a revision id the commit message is in differential
-
-    // TODO: See T848 for the authenticated stuff.
-    if ($revision_id && $this->isConduitAuthenticated()) {
-
+    if ($revision_id) {
+      $this->authenticateConduit(); // already checks if authenticated
       $conduit        = $this->getConduit();
       $commit_message = $conduit->callMethodSynchronous(
-        'differential.getcommitmessage',
-        array(
-          'revision_id' => $revision_id,
-        ));
-      $prompt_message = pht(
-        '  Note arcanist failed to load the commit message '.
-        'from differential for revision %s.',
-        "D{$revision_id}");
-    }
-
-    if (!$commit_message && $revision_id) {
-      $this->authenticateConduit();
-      $conduit        = $this->getConduit();
-      $commit_message = $conduit->callMethodSynchronous(
-        'differential.getcommitmessage',
-        array(
-          'revision_id' => $revision_id,
-        ));
-      $prompt_message = pht(
-        '  Note arcanist failed to load the commit message '.
-        'from differential for revision %s.',
-        "D{$revision_id}");
+          'differential.getcommitmessage',
+          array(
+            'revision_id' => $revision_id,
+          ));
+    } else {
+      throw new Exception(pht("Failed to fetch commit message: bundle has no revision_id"));
     }
 
     if (!$commit_message) {
       throw new Exception(pht("Failed to fetch commit message."));
     }
 
-    /* bulkpatch: Never ask for interactive commit message
-    // no revision id or failed to fetch commit message so get it from the
-    // user on the command line
-    if (!$commit_message) {
-      $template = sprintf(
-        "\n\n# %s%s\n",
-        pht(
-          'Enter a commit message for this patch. If you just want to apply '.
-          'the patch to the working copy without committing, re-run arc patch '.
-          'with the %s flag.',
-          '--nocommit'),
-        $prompt_message);
-
-      $commit_message = $this->newInteractiveEditor($template)
-        ->setName('arcanist-patch-commit-message')
-        ->editInteractively();
-
-      $commit_message = ArcanistCommentRemover::removeComments($commit_message);
-      if (!strlen(trim($commit_message))) {
-        throw new ArcanistUserAbortException();
-      }
-    }
-    */
-
     return $commit_message;
   }
 }
-// UBER CODE
