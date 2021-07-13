@@ -12,7 +12,7 @@ final class ArcanistBulkPatchWorkflow extends ArcanistDiffBasedWorkflow {
   private $diffIds = array();
   private $baseDiffIds = array();
   private $allDiffIds = array();
-  private $tmpDir = null;
+  private $tmpDir;
   private $forceStagingGitDiffs = false;
 
   // State
@@ -81,7 +81,7 @@ EOTEXT
         'help' => pht(
           'If git fallback is required, the path to create the temporary bare '.
           'clone. This must be on the same filesystem as the working directory. '.
-          'Defaults to the system temp path.'
+          'Defaults to the parent of the current working directory.'
          ),
       ),
       '*' => 'name',
@@ -112,9 +112,10 @@ EOTEXT
     }
 
     $this->tmpDir = $this->getArgument("tmp");
-    if ($this->tmpDir != null) {
-      Filesystem::assertExists($this->tmpDir);
+    if ($this->tmpDir == null) {
+      $this->tmpDir = '..';
     }
+    Filesystem::assertExists($this->tmpDir);
 
     $forceStagingGitDiffsArg = $this->getArgument("force-staging-git-diffs");
     if ($forceStagingGitDiffsArg) {
