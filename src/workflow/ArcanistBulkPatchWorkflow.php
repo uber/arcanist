@@ -278,6 +278,8 @@ EOTEXT
         Filesystem::remove($repoPath);
       } catch (Exception $ex) {
         $this->writeWarn(pht('WARNING'), pht('Failed to cleanup temporary git directory: %s', $ex));
+      } catch (Throwable $ex) {
+        $this->writeWarn(pht('WARNING'), pht('Failed to cleanup temporary git directory: %s', $ex));
       }
     }
 
