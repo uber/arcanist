@@ -513,9 +513,11 @@ EOTEXT
           pht('Base commit is not in local repository; trying to fetch.'));
         // UBER CODE
         $this->authenticateConduit();
-        $this->pullBaseTagFromStagingArea($param);
-        $has_base_revision = $repository_api->hasLocalCommit(
-          $bundle->getBaseRevision());
+        if ($source == self::SOURCE_DIFF) {
+          $this->pullBaseTagFromStagingArea($param);
+          $has_base_revision = $repository_api->hasLocalCommit(
+            $bundle->getBaseRevision());
+        }
         if (!$has_base_revision) {
           $this->pullFromAllRemotesUntilFound($bundle->getBaseRevision());
           $has_base_revision = $repository_api->hasLocalCommit(
