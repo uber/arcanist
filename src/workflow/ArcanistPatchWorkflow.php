@@ -441,11 +441,6 @@ EOTEXT
           if ($this->shouldMergeUsingStagingGitTag()) {
             $this->mergeBranchFromStagingArea($param, $bundle);
             return 0;
-          } elseif ($this->shouldUseStagingGitTags()) {
-            $repository_api = $this->getRepositoryAPI();
-            if (!$repository_api->hasLocalCommit($bundle->getBaseRevision())) {
-              $this->pullBaseTagFromStagingArea($param);
-            }
           }
           break;
       }
