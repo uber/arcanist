@@ -4,6 +4,7 @@
 final class UberFZF extends Phobject {
   private $multi = false;
   private $header = '';
+
   // Print query as the first line
   private $printQuery = false;
 
