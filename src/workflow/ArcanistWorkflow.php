@@ -69,12 +69,12 @@ abstract class ArcanistWorkflow extends Phobject {
   private $repositoryVersion;
 
   private $changeCache = array();
-
-
   public function __construct() {}
 
 
-  abstract public function run();
+  public function run() {
+    throw new PhutilMethodNotImplementedException();
+  }
 
   /**
    * Finalizes any cleanup operations that need to occur regardless of

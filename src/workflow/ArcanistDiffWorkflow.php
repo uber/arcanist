@@ -837,7 +837,7 @@ EOTEXT
       $this->revisionID = $revision_id;
 
       $revision['message'] = $this->getArgument('message');
-      if (!strlen($revision['message'])) {
+      if ($revision['message'] === null) {
         $update_messages = $this->readScratchJSONFile('update-messages.json');
 
         $update_messages[$revision_id] = $this->getUpdateMessage(
@@ -2376,9 +2376,12 @@ EOTEXT
     if ($template == '') {
       $comments = $this->getDefaultUpdateMessage();
 
+      $comments = phutil_string_cast($comments);
+      $comments = rtrim($comments);
+
       $template = sprintf(
         "%s\n\n# %s\n#\n# %s\n# %s\n#\n# %s\n#  $ %s\n\n",
-        rtrim($comments),
+        $comments,
         pht(
           'Updating %s: %s',
           "D{$fields['revisionID']}",
@@ -2996,7 +2999,7 @@ EOTEXT
     if (strlen($branch)) {
       $upstream_path = $api->getPathToUpstream($branch);
       $remote_branch = $upstream_path->getRemoteBranchName();
-      if (strlen($remote_branch)) {
+      if ($remote_branch !== null) {
         return array(
           array(
             'type' => 'branch',
@@ -3010,7 +3013,7 @@ EOTEXT
     // If "arc.land.onto.default" is configured, use that.
     $config_key = 'arc.land.onto.default';
     $onto = $this->getConfigFromAnySource($config_key);
-    if (strlen($onto)) {
+    if ($onto !== null) {
       return array(
         array(
           'type' => 'branch',
