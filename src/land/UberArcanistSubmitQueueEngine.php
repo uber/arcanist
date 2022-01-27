@@ -148,7 +148,6 @@ class UberArcanistSubmitQueueEngine
       $hasAutolandTag = (bool)preg_match('/\b#autoland\b/i', $summary);
       $hasBreakglass = (bool)preg_match('/\bBREAKGLASS\b/i', $summary);
       if ($hasAutolandTag || $hasBreakglass) {
-        $this->writeInfo(3);
         return false;
       }
     }
