@@ -135,7 +135,7 @@ EOTEXT
         $extra_diff_args[] = '--excuse';
         $extra_diff_args[] = $this->getArgument('excuse');
       }
-      if ($this->getArgument('no-autoland')) {
+      if ($this->getArgument('noautoland')) {
         $extra_diff_args[] = '--noautoland';
       }
 
