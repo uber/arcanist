@@ -876,7 +876,7 @@ function array_mergev(array $arrayv) {
     }
   }
 
-  return call_user_func_array('array_merge', $arrayv);
+  return call_user_func_array('array_merge', array_values($arrayv));
 }
 
 
