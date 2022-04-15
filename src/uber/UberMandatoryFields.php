@@ -12,8 +12,8 @@
  *   "field_name": "revertPlan",
  *   "field_message": "Revert plan is mandatory",
  *   "paths_regex": [
- *      "/^src\//",
- *      "/^idl\//"
+ *      "/^src\\//",
+ *      "/^idl\\//"
  *   ]
  * }]
  *
