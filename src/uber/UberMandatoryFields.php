@@ -121,15 +121,20 @@ final class UberMandatoryFields extends Phobject {
       return;
     }
 
+    $missing_fields = array();
     foreach ($fields as $field) {
       $field_name = $field['field_name'];
       $paths_regex = idx($field, 'paths_regex');
 
       $is_empty = empty($message->getFieldValue($field_name));
       if ($is_empty && $this->affectedPathExist($field, $affected_paths)) {
-        $field_message = $field['field_message'];
-        throw new ArcanistUsageException(pht('%s', $field_message));
+        $missing_fields[] = $field['field_message'];
       }
+    }
+
+    if (!empty($missing_fields)) {
+      throw new ArcanistUsageException(
+        "Following errors were found:\n - " . implode("\n - ", $missing_fields));
     }
   }
 }
