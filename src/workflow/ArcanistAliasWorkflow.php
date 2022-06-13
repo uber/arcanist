@@ -123,6 +123,7 @@ EOTEXT
   }
 
   public static function isShellCommandAlias($command) {
+    $command = phutil_string_cast($command);
     return preg_match('/^!/', $command);
   }
 
