@@ -2918,7 +2918,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateLintDiffProperty() {
-    if (strlen($this->excuses['lint'])) {
+    if (phutil_nonempty_string($this->excuses['lint'])) {
       $this->updateDiffProperty(
         'arc:lint-excuse',
         json_encode($this->excuses['lint']));
@@ -2942,7 +2942,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateUnitDiffProperty() {
-    if (strlen($this->excuses['unit'])) {
+    if (phutil_nonempty_string($this->excuses['unit'])) {
       $this->updateDiffProperty('arc:unit-excuse',
         json_encode($this->excuses['unit']));
     }
