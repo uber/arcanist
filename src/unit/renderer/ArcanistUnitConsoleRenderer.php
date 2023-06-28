@@ -22,7 +22,7 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
       $test_name);
 
     if ($result_code != ArcanistUnitTestResult::RESULT_PASS
-        && strlen($result->getUserData())) {
+        && $result->getUserData() !== null && strlen($result->getUserData())) {
       $return .= $result->getUserData()."\n";
     }
 
