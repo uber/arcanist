@@ -123,7 +123,7 @@ EOTEXT
   }
 
   public static function isShellCommandAlias($command) {
-    return preg_match('/^!/', $command);
+    return $command != null && preg_match('/^!/', $command);
   }
 
   public static function resolveAliases(
