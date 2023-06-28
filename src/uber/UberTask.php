@@ -51,7 +51,7 @@ final class UberTask extends Phobject {
       ->setFollowLocation(false)
       ->setTimeout(self::TIMEOUT)
       ->setMethod('POST')
-      ->addHeader('Authorization', "Bearer ${token}")
+      ->addHeader('Authorization', "Bearer {$token}")
       ->addHeader('Rpc-Caller', 'arcanist')
       ->addHeader('Rpc-Encoding', 'json')
       ->addHeader('Rpc-Procedure', 'ArcanistTheService::getIssues');

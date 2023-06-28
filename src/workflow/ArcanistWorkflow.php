@@ -2066,7 +2066,7 @@ abstract class ArcanistWorkflow extends Phobject {
     $map = $this->getModernCommonDictionary($map);
 
     $details = idx($map, 'userData');
-    if (strlen($details)) {
+    if ($details !== null && strlen($details)) {
       $map['details'] = (string)$details;
     }
     unset($map['userData']);
