@@ -639,8 +639,7 @@ final class ArcanistBundle extends Phobject {
     $old_path = $change->getOldPath();
     $type = $change->getType();
 
-    if (!strlen($old_path) ||
-        $type == ArcanistDiffChangeType::TYPE_ADD) {
+    if ($old_path === '' || $type == ArcanistDiffChangeType::TYPE_ADD) {
       $old_path = null;
     }
 
