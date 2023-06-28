@@ -837,7 +837,7 @@ EOTEXT
       $this->revisionID = $revision_id;
 
       $revision['message'] = $this->getArgument('message');
-      if (!strlen($revision['message'])) {
+      if ($revision['message'] === null) {
         $update_messages = $this->readScratchJSONFile('update-messages.json');
 
         $update_messages[$revision_id] = $this->getUpdateMessage(
@@ -2391,9 +2391,12 @@ EOTEXT
     if ($template == '') {
       $comments = $this->getDefaultUpdateMessage();
 
+      $comments = phutil_string_cast($comments);
+      $comments = rtrim($comments);
+
       $template = sprintf(
         "%s\n\n# %s\n#\n# %s\n# %s\n#\n# %s\n#  $ %s\n\n",
-        rtrim($comments),
+        $comments,
         pht(
           'Updating %s: %s',
           "D{$fields['revisionID']}",
@@ -2930,7 +2933,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateLintDiffProperty() {
-    if (strlen($this->excuses['lint'])) {
+    if ($this->excuses['lint'] !== null) {
       $this->updateDiffProperty(
         'arc:lint-excuse',
         json_encode($this->excuses['lint']));
@@ -2954,7 +2957,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateUnitDiffProperty() {
-    if (strlen($this->excuses['unit'])) {
+    if ($this->excuses['unit'] !== null) {
       $this->updateDiffProperty('arc:unit-excuse',
         json_encode($this->excuses['unit']));
     }
