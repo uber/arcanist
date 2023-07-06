@@ -115,8 +115,7 @@ EOTEXT
       if (!$found) {
         echo pht("No library currently exists at that path...\n");
         $this->liberateCreateDirectory($path);
-        $this->liberateCreateLibrary($path);
-        return;
+        return $this->liberateCreateLibrary($path);
       }
     }
 
@@ -160,6 +159,10 @@ EOTEXT
     return 1;
   }
 
+  /**
+   * @return  int The exit code of running the rebuild-map.php script, which
+   *              will be 0 to indicate success or non-zero for failure.
+   */
   private function liberateVersion2($path) {
     $bin = $this->getScriptPath('scripts/phutil_rebuild_map.php');
 
@@ -203,10 +206,14 @@ EOTEXT
     execx('mkdir -p %s', $path);
   }
 
+  /**
+   * @return  int The exit code of running the rebuild-map.php script, which
+   *              will be 0 to indicate success or non-zero for failure.
+   */
   private function liberateCreateLibrary($path) {
     $init_path = $path.'/__phutil_library_init__.php';
     if (Filesystem::pathExists($init_path)) {
-      return;
+      return 0;
     }
 
     echo pht("Creating new libphutil library in '%s'.", $path)."\n";
@@ -239,7 +246,7 @@ EOTEXT
       '__phutil_library_init__.php',
       $path);
     Filesystem::writeFile($init_path, $template);
-    $this->liberateVersion2($path);
+    return $this->liberateVersion2($path);
   }
 
 

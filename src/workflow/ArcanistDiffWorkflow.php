@@ -837,7 +837,7 @@ EOTEXT
       $this->revisionID = $revision_id;
 
       $revision['message'] = $this->getArgument('message');
-      if (!strlen($revision['message'])) {
+      if ($revision['message'] === null || !strlen($revision['message'])) {
         $update_messages = $this->readScratchJSONFile('update-messages.json');
 
         $update_messages[$revision_id] = $this->getUpdateMessage(
@@ -2391,6 +2391,9 @@ EOTEXT
     if ($template == '') {
       $comments = $this->getDefaultUpdateMessage();
 
+      $comments = (string)$comments;
+      $comments = rtrim($comments);
+
       $template = sprintf(
         "%s\n\n# %s\n#\n# %s\n# %s\n#\n# %s\n#  $ %s\n\n",
         rtrim($comments),
@@ -2930,7 +2933,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateLintDiffProperty() {
-    if (strlen($this->excuses['lint'])) {
+    if ($this->excuses['lint'] !== null && strlen($this->excuses['lint'])) {
       $this->updateDiffProperty(
         'arc:lint-excuse',
         json_encode($this->excuses['lint']));
@@ -2954,7 +2957,7 @@ EOTEXT
    * @task diffprop
    */
   private function updateUnitDiffProperty() {
-    if (strlen($this->excuses['unit'])) {
+    if ($this->excuses['unit'] !== null && strlen($this->excuses['unit'])) {
       $this->updateDiffProperty('arc:unit-excuse',
         json_encode($this->excuses['unit']));
     }
@@ -3008,10 +3011,10 @@ EOTEXT
 
     // If we track an upstream branch either directly or indirectly, use that.
     $branch = $api->getBranchName();
-    if (strlen($branch)) {
+    if ($branch !== null && strlen($branch)) {
       $upstream_path = $api->getPathToUpstream($branch);
       $remote_branch = $upstream_path->getRemoteBranchName();
-      if (strlen($remote_branch)) {
+      if ($remote_branch !== null) {
         return array(
           array(
             'type' => 'branch',
@@ -3025,7 +3028,7 @@ EOTEXT
     // If "arc.land.onto.default" is configured, use that.
     $config_key = 'arc.land.onto.default';
     $onto = $this->getConfigFromAnySource($config_key);
-    if (strlen($onto)) {
+    if ($onto !== null) {
       return array(
         array(
           'type' => 'branch',

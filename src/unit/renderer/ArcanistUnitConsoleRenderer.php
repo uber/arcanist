@@ -12,7 +12,7 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
 
     $test_name = $result->getName();
     $test_namespace = $result->getNamespace();
-    if (strlen($test_namespace)) {
+    if ($test_namespace !== null && strlen($test_namespace)) {
       $test_name = $test_namespace.'::'.$test_name;
     }
 
@@ -65,7 +65,6 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
       50   => "<fg:green>%s</fg><fg:yellow>{$star}</fg> ",
       200  => '<fg:green>%s</fg>  ',
       500  => '<fg:yellow>%s</fg>  ',
-      INF  => '<fg:red>%s</fg>  ',
     );
 
     $milliseconds = $seconds * 1000;

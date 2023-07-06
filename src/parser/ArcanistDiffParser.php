@@ -217,7 +217,7 @@ final class ArcanistDiffParser extends Phobject {
       $line = $this->nextLine();
     }
 
-    if (strlen($message)) {
+    if ($message !== null && strlen($message)) {
       // If we found a message during pre-parse steps, add it to the resulting
       // changes here.
       $change = $this->buildChange(null)
@@ -263,7 +263,7 @@ final class ArcanistDiffParser extends Phobject {
         // searching for "diff -r" or "diff --git" in the text.
         $this->saveLine();
         $line = $this->nextLineThatLooksLikeDiffStart();
-        if (!$this->tryMatchHeader($patterns, $line, $match)) {
+        if ($line === null || !$this->tryMatchHeader($patterns, $line, $match)) {
           // Restore line before guessing to display correct error.
           $this->restoreLine();
           $failed_parse = true;
@@ -580,10 +580,13 @@ final class ArcanistDiffParser extends Phobject {
 
         $ok = false;
         $match = null;
-        foreach ($patterns as $pattern) {
-          $ok = preg_match('@^'.$pattern.'@', $line, $match);
-          if ($ok) {
-            break;
+
+        if ($line !== null) {
+          foreach ($patterns as $pattern) {
+            $ok = preg_match('@^'.$pattern.'@', $line, $match);
+            if ($ok) {
+              break;
+            }
           }
         }
 
@@ -772,7 +775,7 @@ final class ArcanistDiffParser extends Phobject {
       $this->nextLine();
       $this->parseGitBinaryPatch();
       $line = $this->getLine();
-      if (preg_match('/^literal/', $line)) {
+      if ($line !== null && preg_match('/^literal/', $line)) {
         // We may have old/new binaries (change) or just a new binary (hg add).
         // If there are two blocks, parse both.
         $this->parseGitBinaryPatch();
@@ -1039,7 +1042,7 @@ final class ArcanistDiffParser extends Phobject {
         $line = $this->nextNonemptyLine();
       }
 
-    } while (preg_match('/^@@ /', $line));
+    } while (($line !== null) && preg_match('/^@@ /', $line));
   }
 
   protected function buildChange($path = null) {
