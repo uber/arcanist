@@ -2391,12 +2391,13 @@ EOTEXT
     if ($template == '') {
       $comments = $this->getDefaultUpdateMessage();
 
-      $comments = (string)$comments;
+
+      $comments = phutil_string_cast($comments);
       $comments = rtrim($comments);
 
       $template = sprintf(
         "%s\n\n# %s\n#\n# %s\n# %s\n#\n# %s\n#  $ %s\n\n",
-        rtrim($comments),
+        $comments,
         pht(
           'Updating %s: %s',
           "D{$fields['revisionID']}",

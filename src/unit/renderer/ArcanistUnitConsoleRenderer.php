@@ -22,7 +22,7 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
       $test_name);
 
     if ($result_code != ArcanistUnitTestResult::RESULT_PASS
-        && strlen($result->getUserData())) {
+        && $result->getUserData() !== null && strlen($result->getUserData())) {
       $return .= $result->getUserData()."\n";
     }
 
@@ -67,6 +67,8 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
       500  => '<fg:yellow>%s</fg>  ',
     );
 
+    $least_acceptable = '<fg:red>%s</fg>  ';
+
     $milliseconds = $seconds * 1000;
     $duration = $this->formatTime($seconds);
     foreach ($acceptableness as $upper_bound => $formatting) {
@@ -74,7 +76,7 @@ final class ArcanistUnitConsoleRenderer extends ArcanistUnitRenderer {
         return phutil_console_format($formatting, $duration);
       }
     }
-    return phutil_console_format(end($acceptableness), $duration);
+    return phutil_console_format($least_acceptable, $duration);
   }
 
   private function formatTime($seconds) {

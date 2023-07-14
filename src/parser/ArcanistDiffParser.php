@@ -921,11 +921,11 @@ final class ArcanistDiffParser extends Phobject {
       $hunk->setNewOffset($matches[3]);
 
       // Cover for the cases where length wasn't present (implying one line).
-      $old_len = idx($matches, 2);
+      $old_len = idx($matches, 2, '');
       if (!strlen($old_len)) {
         $old_len = 1;
       }
-      $new_len = idx($matches, 4);
+      $new_len = idx($matches, 4, '');
       if (!strlen($new_len)) {
         $new_len = 1;
       }
