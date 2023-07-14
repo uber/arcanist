@@ -234,12 +234,18 @@ class UberCheckstyleLinter extends ArcanistFutureLinter {
 
   protected function parseLinterOutput($path, $err, $stdout, $stderr) {
     // return if null or empty
-    if ($stdout == null || strlen($stdout) == 0) {
-      return;
+    if ($stdout == null || strlen(trim($stdout)) == 0) {
+          return;
     }
+
     // Strip out last line of Checkstyle XML output [see: https://github.com/checkstyle/checkstyle/issues/1018]
     if(strpos($stdout, 'Checkstyle ends') !== false) {
       $stdout = substr($stdout, 0, strrpos($stdout, "Checkstyle ends"));
+    }
+
+    // return if null or empty
+    if ($stdout == null || strlen(trim($stdout)) == 0) {
+      return;
     }
 
     $dom = new DOMDocument();
