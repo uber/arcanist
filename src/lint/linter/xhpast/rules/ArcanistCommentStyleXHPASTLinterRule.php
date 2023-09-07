@@ -17,6 +17,10 @@ final class ArcanistCommentStyleXHPASTLinterRule
         continue;
       }
 
+      if (preg_match('/^#\\[\\\\/', $value)) {
+        continue;
+      }
+
       $this->raiseLintAtOffset(
         $comment->getOffset(),
         pht(
