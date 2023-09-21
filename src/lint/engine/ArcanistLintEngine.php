@@ -567,6 +567,7 @@ abstract class ArcanistLintEngine extends Phobject {
         'type' => 'lint',
         'linter' => $linter->getInfoName(),
         'paths' => $paths,
+        'linterClass' => get_class($linter),
       ));
   }
 
