@@ -543,17 +543,21 @@ abstract class ArcanistLintEngine extends Phobject {
       return $exceptions;
     }
 
+    $call_id = $this->beginLintServiceCall($linter, $paths);
     try {
       $this->executeLinterOnPaths($linter, $paths);
     } catch (Exception $ex) {
+      $this->endLintServiceCall($call_id);
       $exceptions[] = $ex;
     }
 
     try {
       $this->executeDidLintOnPaths($linter, $paths);
     } catch (Exception $ex) {
+      $this->endLintServiceCall($call_id);
       $exceptions[] = $ex;
     }
+    $this->endLintServiceCall($call_id);
 
     return $exceptions;
   }
@@ -577,36 +581,18 @@ abstract class ArcanistLintEngine extends Phobject {
   }
 
   private function executeLinterOnPaths(ArcanistLinter $linter, array $paths) {
-    $call_id = $this->beginLintServiceCall($linter, $paths);
-
-    try {
-      $linter->willLintPaths($paths);
-      foreach ($paths as $path) {
-        $linter->setActivePath($path);
-        $linter->lintPath($path);
-        if ($linter->didStopAllLinters()) {
-          $this->stopped[$path] = $linter->getLinterID();
-        }
+    $linter->willLintPaths($paths);
+    foreach ($paths as $path) {
+      $linter->setActivePath($path);
+      $linter->lintPath($path);
+      if ($linter->didStopAllLinters()) {
+        $this->stopped[$path] = $linter->getLinterID();
       }
-    } catch (Exception $ex) {
-      $this->endLintServiceCall($call_id);
-      throw $ex;
     }
-
-    $this->endLintServiceCall($call_id);
   }
 
   private function executeDidLintOnPaths(ArcanistLinter $linter, array $paths) {
-    $call_id = $this->beginLintServiceCall($linter, $paths);
-
-    try {
-      $linter->didLintPaths($paths);
-    } catch (Exception $ex) {
-      $this->endLintServiceCall($call_id);
-      throw $ex;
-    }
-
-    $this->endLintServiceCall($call_id);
+    $linter->didLintPaths($paths);
   }
 
   private function validateLintMessage(
