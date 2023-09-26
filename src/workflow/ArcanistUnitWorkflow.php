@@ -167,7 +167,15 @@ EOTEXT
     }
     $this->engine->setEnableCoverage($enable_coverage);
 
+    $profiler = PhutilServiceProfiler::getInstance();
+    $id = $profiler->beginServiceCall(array(
+      'type' => 'unit',
+      'engine' => get_class($this->engine),
+    ));
+
     $results = $this->engine->run();
+
+    $profiler->endServiceCall($id, array());
 
     $this->validateUnitEngineResults($this->engine, $results);
 
