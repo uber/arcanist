@@ -170,6 +170,7 @@ EOTEXT
     $profiler = PhutilServiceProfiler::getInstance();
     $id = $profiler->beginServiceCall(array(
       'type' => 'unit',
+      'paths' => $paths,
       'engine' => get_class($this->engine),
     ));
 
