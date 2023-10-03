@@ -20,7 +20,28 @@ final class UberMultiTestEngine extends ArcanistUnitTestEngine {
             }
 
             $engine = $this->instantiateEngine($engine_class);
+
+            $unitEngineCommand = $engine_or_configuration['unit.engine.command'] ?? null;
+            $buildSystem = $engine_or_configuration['build-system'] ?? null;
+            $target = $engine_or_configuration['target'] ?? null;
+
+            $unit_check = '';
+            if ($unitEngineCommand) {
+                $unit_check = $unitEngineCommand;
+            } elseif ($buildSystem && $target) {
+                $unit_check = $buildSystem . ' ' . $target;
+            }
+
+            # paths use for backward compatibility with changes at UberArcanistConfiguration
+            $paths = [$unit_check];
+            $profiler = PhutilServiceProfiler::getInstance();
+            $id = $profiler->beginServiceCall(array(
+                'type' => 'unit',
+                'paths' => $paths,
+                'engine' => $engine_class,
+            ));
             $results = array_merge($results, $engine->run());
+            $profiler->endServiceCall($id, array());
         }
 
         return $results;
@@ -33,7 +54,7 @@ final class UberMultiTestEngine extends ArcanistUnitTestEngine {
                 "Configured unit test engine '{$engine_class}' is not a subclass of 'ArcanistUnitTestEngine'."
                 );
         }
-        
+
         $engine = newv($engine_class, array());
         $engine->setWorkingCopy($this->getWorkingCopy());
         $engine->setConfigurationManager($this->getConfigurationManager());
