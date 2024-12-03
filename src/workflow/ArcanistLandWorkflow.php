@@ -1540,7 +1540,7 @@ EOTEXT
    *
    * @param string $diff_phid The PHID of the Differential to check.
    *
-   * @throws ArcanistBuildableNotPassingException the Buildable is not passing.
+   * @throws ArcanistBuildableNotPassingException if the Buildable is not passing.
    *
    * This exception is thrown to ensure that "arc land" cannot proceed with
    * unresolved builds.
