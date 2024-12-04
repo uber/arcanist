@@ -17,3 +17,24 @@ For more information about Phabricator, see http://phabricator.org/.
 **LICENSE**
 
 Arcanist is released under the Apache 2.0 license except as otherwise noted.
+
+## Use Rector to perform PHP code migrations
+
+1. Install composer: https://getcomposer.org/download/
+
+Composer is the php package manager, used to install codemod tooling.
+
+We use "rector" as our codemod tooling. Rector is a PHP code refactoring tool that allows you to automatically apply code changes to your codebase.
+
+2. Install composer dependencies using composer:
+
+```
+composer install
+```
+
+3. Include codemods you wish to run in the `./rector.php` file
+
+4. Run codemods
+
+Dry run using: `vendor/bin/rector process --dry-run`
+Apply codemods using: `vendor/bin/rector process`

@@ -7,7 +7,7 @@ final class UberUSSO extends Phobject {
 
   public function enhanceConduitClient(
     $conduit,
-    HTTPFutureHTTPResponseStatus $status = null) {
+    ?HTTPFutureHTTPResponseStatus $status = null) {
 
     $tkn = null;
     if ($status != null) {

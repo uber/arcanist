@@ -2197,7 +2197,7 @@ EOTEXT
 
   // check and if necessary prompts to enter jira tasks
   private function attachJiraIssues(&$revision, array $diff_spec,
-    ArcanistDifferentialCommitMessage $message = null) {
+    ?ArcanistDifferentialCommitMessage $message = null) {
 
     if ($this->getArgument('nojira')) {
       return;

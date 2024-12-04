@@ -11,3 +11,6 @@
 # User extensions
 /externals/includes/*
 /src/extensions/*
+
+# 3rd party libs
+vendor/
