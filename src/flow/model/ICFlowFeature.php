@@ -63,7 +63,7 @@ final class ICFlowFeature extends Phobject {
     return idx($this->revision, $index, $default);
   }
 
-  public function attachRevisionData(array $revision = null) {
+  public function attachRevisionData(?array $revision = null) {
     $this->revision = $revision;
     return $this;
   }
@@ -107,7 +107,7 @@ final class ICFlowFeature extends Phobject {
     return idx($this->search, $index, $default);
   }
 
-  public function attachSearchData(array $search = null) {
+  public function attachSearchData(?array $search = null) {
     $this->search = $search;
     return $this;
   }
