@@ -462,6 +462,10 @@ EOTEXT
 
   public function run() {
     $this->console = PhutilConsole::getConsole();
+
+    // Add a banner to inform users about GitHub invitation
+    $this->displayGitHubInvitationBanner();
+
     // UBER CODE
     $this->uberRefProvider = new UberRefProvider(
       $this->getConfigurationManager()->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
@@ -713,6 +717,36 @@ EOTEXT
     $this->removeScratchFile('create-message-jira-issues.json'); // UBER CODE
 
     return 0;
+  }
+
+  /**
+   * Display a banner to inform users about GitHub.
+   * Only display the banner if the user is in the github-beta-users LDAP group.
+   */
+  private function displayGitHubInvitationBanner() {
+    $gbu = new UberGitHubBetaUsers();
+    $isMember = $gbu->isCurrentUserInGitHubBetaUsers();
+    if (!$isMember) {
+      return;
+    }
+    $banner = <<<EOBANNER
+**************************************
+*                                    *
+*      Important Announcement!       *
+*                                    *
+*  You're invited to try GitHub!     *
+*                                    *
+*  Switch to GitHub for enhanced     *
+*  collaboration and workflow.       *
+*                                    *
+*  Get started at t.uber.com/github  *
+*  Slack channel: #github-pr-beta    *
+*                                    *
+**************************************
+
+EOBANNER;
+
+    $this->console->writeOut("<fg:green>%s</fg>\n", $banner);
   }
 
   private function runRepositoryAPISetup() {
