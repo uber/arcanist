@@ -732,8 +732,6 @@ EOTEXT
     $banner = <<<EOBANNER
 **************************************
 *                                    *
-*      Important Announcement!       *
-*                                    *
 *  You're invited to try GitHub!     *
 *                                    *
 *  Switch to GitHub for enhanced     *
