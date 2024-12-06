@@ -43,10 +43,9 @@ final class UberGitHubBetaUsers extends Phobject {
     $user = getenv('USER');
     if ($user === false) {
       return false;
-    } else {
-      $userEmail = $user . '@uber.com';
-      return in_array($userEmail, $githubBetaUsers);
     }
+    $userEmail = $user . '@uber.com';
+    return in_array($userEmail, $githubBetaUsers);
   }
 
 }
