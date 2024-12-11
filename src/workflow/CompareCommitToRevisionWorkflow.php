@@ -14,7 +14,8 @@
  *
  *
  * To manually test this workflow:
- *    `git log -n 100 --format=%H | xargs -n 1 ~/uber-repos/arcanist/bin/arc compare-commit-to-revision --commit`
+ *    `git log -n 100 --format=%H | xargs -n 1 ~/uber-repos/arcanist/bin/arc \
+ *      compare-commit-to-revision --commit`
  */
 final class CompareCommitToRevisionWorkflow extends ArcanistWorkflow {
 
@@ -159,8 +160,6 @@ EOTEXT
             return 1;
         }
 
-        // echo pht('data is %s: ', json_encode($data, JSON_PRETTY_PRINT));
-
         $commit_msg = $data[0]['fields']['message'];
 
         if (!$this->repositoryId) {
@@ -177,12 +176,10 @@ EOTEXT
         echo pht('unexpected result from regex.  Expected 2, got %d',
                  count($matches)), "\n";
       }
-      if (count($matches[1]) < 1) {
-        // echo pht('No revision ID found in commit message.'), "\n";
-      } else if (count($matches[1]) > 1) {
+
+      if (count($matches[1]) > 0) {
+        # use last revision id found in commit message
         $this->revisionId = $matches[1][count($matches[1]) - 1];
-      } else {
-        $this->revisionId = head($matches[1]);
       }
     }
 
@@ -265,8 +262,6 @@ EOTEXT
       return '';
     }
 
-    // echo pht('data is %s: ', json_encode($data, JSON_PRETTY_PRINT));
-
     $repo_phid = $data[0]['phid'];
     return $repo_phid;
   }
@@ -304,8 +299,6 @@ EOTEXT
       'linesOfContext' => 3,
     );
 
-    // echo pht ('params are %s', json_encode($params));
-
     $result = $this->getConduit()->callMethodSynchronous(
         'diffusion.rawdiffquery', $params);
 
@@ -329,13 +322,10 @@ EOTEXT
       'phid' => $phid,
     );
 
-    // echo pht ('params are %s', json_encode($params));
-
     $result = $this->getConduit()->callMethodSynchronous(
         'file.download', $params);
     $diff = base64_decode($result);
 
-    // echo pht('diff: %s', $diff);
     return $diff;
   }
 
