@@ -51,7 +51,7 @@ EOTEXT
   }
 
   public function requiresWorkingCopy() {
-    return $this->useLocalEnlistment = $this->getArgument('use-local-enlistment');
+    return $this->getArgument('use-local-enlistment');
   }
 
   public function requiresConduit() {
@@ -63,7 +63,7 @@ EOTEXT
   }
 
   public function requiresRepositoryAPI() {
-    return $this->useLocalEnlistment = $this->getArgument('use-local-enlistment');
+    return $this->getArgument('use-local-enlistment');
   }
 
   public function getArguments() {
