@@ -14,8 +14,3 @@
 
 # 3rd party libs
 vendor/
-
-# IntelliJ auto-created files for PHP projects
-.idea/
-arcanist.iml
-composer.json
