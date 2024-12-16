@@ -957,7 +957,7 @@ EOTEXT
 
     $diff_phid = idx($this->revision, 'activeDiffPHID');
     if ($diff_phid) {
-      $this->checkForBuildables($diff_phid);
+      $this->ensureBuildableIsPassing($diff_phid);
     }
   }
 
@@ -1524,115 +1524,6 @@ EOTEXT
 
 
   /**
-   * Check if a diff has a running or failed buildable, and prompt the user
-   * before landing if it does.
-   */
-  private function checkForBuildables($diff_phid) {
-    // Reset ongoing builds value.
-    $this->uberOngoingBuildsExist = false;
-
-    // Try to use the more modern check which respects the "Warn on Land"
-    // behavioral flag on build plans if we can. This newer check won't work
-    // unless the server is running code from March 2019 or newer since the
-    // API methods we need won't exist yet. We'll fall back to the older check
-    // if this one doesn't work out.
-    try {
-      $this->checkForBuildablesWithPlanBehaviors($diff_phid);
-      return;
-    } catch (ArcanistUserAbortException $abort_ex) {
-      throw $abort_ex;
-    } catch (Exception $ex) {
-      // Continue with the older approach, below.
-    }
-
-    // NOTE: Since Harbormaster is still beta and this stuff all got added
-    // recently, just bail if we can't find a buildable. This is just an
-    // advisory check intended to prevent human error.
-
-    try {
-      $buildables = $this->getConduit()->callMethodSynchronous(
-        'harbormaster.querybuildables',
-        array(
-          'buildablePHIDs' => array($diff_phid),
-          'manualBuildables' => false,
-        ));
-    } catch (ConduitClientException $ex) {
-      return;
-    }
-
-    if (!$buildables['data']) {
-      // If there's no corresponding buildable, we're done.
-      return;
-    }
-
-    $console = PhutilConsole::getConsole();
-
-    $buildable = head($buildables['data']);
-
-    if ($buildable['buildableStatus'] == 'passed') {
-      $console->writeOut(
-        "**<bg:green> %s </bg>** %s\n",
-        pht('BUILDS PASSED'),
-        pht('Harbormaster builds for the active diff completed successfully.'));
-      return;
-    }
-
-    switch ($buildable['buildableStatus']) {
-      case 'building':
-        $message = pht(
-          'Harbormaster is still building the active diff for this revision.');
-        $prompt = pht('Land revision anyway, despite ongoing build?');
-        $this->uberOngoingBuildsExist = true;
-        break;
-      case 'failed':
-        $message = pht(
-          'Harbormaster failed to build the active diff for this revision.');
-        $prompt = pht('Land revision anyway, despite build failures?');
-        break;
-      default:
-        // If we don't recognize the status, just bail.
-        return;
-    }
-
-    $builds = $this->queryBuilds(
-      array(
-        'buildablePHIDs' => array($buildable['phid']),
-      ));
-
-    $console->writeOut($message."\n\n");
-
-    $builds = msortv($builds, 'getStatusSortVector');
-    foreach ($builds as $build) {
-      $ansi_color = $build->getStatusANSIColor();
-      $status_name = $build->getStatusName();
-      $object_name = $build->getObjectName();
-      $build_name = $build->getName();
-
-      echo tsprintf(
-        "    **<bg:".$ansi_color."> %s </bg>** %s: %s\n",
-        $status_name,
-        $object_name,
-        $build_name);
-    }
-
-    $console->writeOut(
-      "\n%s\n\n    **%s**: __%s__",
-      pht('You can review build details here:'),
-      pht('Harbormaster URI'),
-      $buildable['uri']);
-
-    if ($this->getConfigFromAnySource("uber.land.buildables-check") && !$this->tbr) {
-      $console->writeOut("\n");
-      throw new ArcanistUsageException(
-        pht("All harbormaster buildables have not succeeded."));
-    }
-
-    if (!phutil_console_confirm($prompt)) {
-      throw new ArcanistUserAbortException();
-    }
-  }
-
-  /**
    * Returns true if builds are fine. False if land procedure should be stopped.
    */
   public function uberBuildEngineMessage(UberArcanistSubmitQueueEngine $engine) {
@@ -1642,19 +1533,27 @@ EOTEXT
     return !$this->uberOngoingBuildsExist;
   }
 
-  private function checkForBuildablesWithPlanBehaviors($diff_phid) {
+  /**
+   * Ensures that the Buildable associated with the provided Differential PHID
+   * is in a passing state before proceeding. If the Buildable is failing, the process
+   * is aborted and the failing Buildable URL and builds are displayed for the user.
+   *
+   * @param string $diff_phid The PHID of the Differential to check.
+   *
+   * @throws ArcanistBuildableNotPassingException if the Buildable is not passing.
+   *
+   * This exception is thrown to ensure that "arc land" cannot proceed with
+   * unresolved builds.
+   */
+  private function ensureBuildableIsPassing(string $diff_phid): void {
     // Reset ongoing builds value.
     $this->uberOngoingBuildsExist = false;
-
-    // TODO: These queries should page through all results instead of fetching
-    // only the first page, but we don't have good primitives to support that
-    // in "master" yet.
 
     $this->writeInfo(
       pht('BUILDS'),
       pht('Checking build status...'));
 
-    $raw_buildables = $this->getConduit()->callMethodSynchronous(
+    $raw_buildable = $this->getConduit()->callMethodSynchronous(
       'harbormaster.buildable.search',
       array(
         'constraints' => array(
@@ -1665,18 +1564,17 @@ EOTEXT
         ),
       ));
 
-    if (!$raw_buildables['data']) {
+    if (!$raw_buildable['data']) {
       return;
     }
 
-    $buildables = $raw_buildables['data'];
-    $buildable_phids = ipull($buildables, 'phid');
-
+    $buildable = head($raw_buildable['data']);
+    $buildable_phid = $buildable['phid'];
     $raw_builds = $this->getConduit()->callMethodSynchronous(
       'harbormaster.build.search',
       array(
         'constraints' => array(
-          'buildables' => $buildable_phids,
+          'buildables' => [$buildable_phid],
         ),
       ));
 
@@ -1719,7 +1617,7 @@ EOTEXT
         continue;
       }
 
-      $plan_behavior = $plan->getBehavior('arc-land', 'always');
+      $plan_behavior = $plan->getBehavior('buildable', 'always');
       $if_building = ($plan_behavior == 'building');
       $if_complete = ($plan_behavior == 'complete');
       $if_never = ($plan_behavior == 'never');
@@ -1762,14 +1660,12 @@ EOTEXT
         pht('BUILD FAILURES'),
         pht(
           'Harbormaster failed to build the active diff for this revision:'));
-      $prompt = pht('Land revision anyway, despite build failures?');
     } else if ($ongoing_builds) {
       $this->writeWarn(
         pht('ONGOING BUILDS'),
         pht(
           'Harbormaster is still building the active diff for this revision:'));
       $this->uberOngoingBuildsExist = true;
-      $prompt = pht('Land revision anyway, despite ongoing build?');
     }
 
     $show_builds = array_merge($failed_builds, $ongoing_builds);
@@ -1791,19 +1687,19 @@ EOTEXT
       "\n%s\n\n",
       pht('You can review build details here:'));
 
-    foreach ($buildables as $buildable) {
-      $buildable_uri = id(new PhutilURI($this->getConduitURI()))
-        ->setPath(sprintf('/B%d', $buildable['id']));
+    $buildable_uri = id(new PhutilURI($this->getConduitURI()))
+      ->setPath(sprintf('/B%d', $buildable['id']));
 
-      echo tsprintf(
-        "          **%s**: __%s__\n",
-        pht('Buildable %d', $buildable['id']),
-        $buildable_uri);
-    }
+    echo tsprintf(
+      "          **%s**: __%s__\n",
+      pht('Buildable %d', $buildable['id']),
+      $buildable_uri);
 
-    if (!phutil_console_confirm($prompt)) {
-      throw new ArcanistUserAbortException();
-    }
+    // If we got here, it means the Buildable is not passing.
+    // Always abort "arc land" here (do not let users bypass failing Buildable using prompt!)
+    $console = PhutilConsole::getConsole();
+    $console->writeOut("\n");
+    throw new ArcanistBuildableNotPassingException();
   }
 
   public function buildEngineMessage(ArcanistLandEngine $engine) {
