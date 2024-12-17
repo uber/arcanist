@@ -1710,9 +1710,6 @@ EOTEXT
         pht(
           '"BREAKGLASS" detected in the revision summary. Proceeding with the land operation despite unsuccessful builds.'));
     } else {
-      $console->writeErr(
-        "%s\n",
-        pht('Aborting land operation because blocking builds are failing. Use BREAKGLASS if this is an emergency.'));
       throw new ArcanistBuildableNotPassingException();
     }
   }
