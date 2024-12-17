@@ -1696,10 +1696,46 @@ EOTEXT
       $buildable_uri);
 
     // If we got here, it means the Buildable is not passing.
-    // Always abort "arc land" here (do not let users bypass failing Buildable using prompt!)
+    // Only allow user to proceed if BREAKGLASS or "Build-signed-off-by: <email> <reason>" is present in the revision summary
     $console = PhutilConsole::getConsole();
     $console->writeOut("\n");
-    throw new ArcanistBuildableNotPassingException();
+
+    $revision_summary = idx($this->revision, 'summary', '');
+    // Check for "BREAKGLASS" (case-sensitive).
+    $hasBreakglass = strpos($revision_summary, 'BREAKGLASS') !== false;
+    // Check for "Build-signed-off-by: <...>" using regex. Note: the regex used here matches the one used in IMP "harbormaster" VREF check for consistency.
+    $hasBuildSignedOff = preg_match('/\bBuild-signed-off-by: .+$/m', $revision_summary);
+
+    if ($hasBreakglass || $hasBuildSignedOff) {
+      // Log why we are proceeding.
+      if ($hasBreakglass) {
+        $console->writeOut(
+          "%s\n",
+          pht(
+            '<bg:yellow>WARNING</bg>: "BREAKGLASS" detected in the revision summary. '
+            . 'Proceeding with the land operation despite failing builds.'
+          )
+        );
+      } else {
+        $console->writeOut(
+          "%s\n",
+          pht(
+            '<bg:yellow>WARNING</bg>: "Build-signed-off-by: <email> <reason>" detected in the revision summary. '
+            . 'Proceeding with the land operation despite failing builds.'
+          )
+        );
+      }
+    } else {
+      // If neither condition is met, abort the operation.
+      $console->writeOut(
+        "%s\n",
+        pht(
+          '<bg:red>ERROR</bg>: Neither "BREAKGLASS" nor "Build-signed-off-by: <email> <reason>" '
+          . 'was found in the revision summary. Aborting land operation.'
+        )
+      );
+      throw new ArcanistBuildableNotPassingException();
+    }
   }
 
   public function buildEngineMessage(ArcanistLandEngine $engine) {
