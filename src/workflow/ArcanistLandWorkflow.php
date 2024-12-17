@@ -1713,7 +1713,7 @@ EOTEXT
           "%s\n",
           pht(
             '<bg:yellow>WARNING</bg>: "BREAKGLASS" detected in the revision summary. '
-            . 'Proceeding with the land operation despite failing builds.'
+            . 'Proceeding with the land operation despite unsuccessful builds.'
           )
         );
       } else {
@@ -1721,7 +1721,7 @@ EOTEXT
           "%s\n",
           pht(
             '<bg:yellow>WARNING</bg>: "Build-signed-off-by: <email> <reason>" detected in the revision summary. '
-            . 'Proceeding with the land operation despite failing builds.'
+            . 'Proceeding with the land operation despite unsuccessful builds.'
           )
         );
       }
@@ -1731,7 +1731,7 @@ EOTEXT
         "%s\n",
         pht(
           '<bg:red>ERROR</bg>: Neither "BREAKGLASS" nor "Build-signed-off-by: <email> <reason>" '
-          . 'was found in the revision summary. Aborting land operation.'
+          . 'was found in the revision summary. Aborting land operation because blocking builds are failing.'
         )
       );
       throw new ArcanistBuildableNotPassingException();
