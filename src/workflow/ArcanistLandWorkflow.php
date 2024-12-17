@@ -1696,44 +1696,23 @@ EOTEXT
       $buildable_uri);
 
     // If we got here, it means the Buildable is not passing.
-    // Only allow user to proceed if BREAKGLASS or "Build-signed-off-by: <email> <reason>" is present in the revision summary
+    // Only allow user to proceed if BREAKGLASS is present in the revision summary
     $console = PhutilConsole::getConsole();
     $console->writeOut("\n");
 
     $revision_summary = idx($this->revision, 'summary', '');
     // Check for "BREAKGLASS" (case-sensitive).
     $hasBreakglass = strpos($revision_summary, 'BREAKGLASS') !== false;
-    // Check for "Build-signed-off-by: <...>" using regex. Note: the regex used here matches the one used in IMP "harbormaster" VREF check for consistency.
-    $hasBuildSignedOff = preg_match('/\bBuild-signed-off-by: .+$/m', $revision_summary);
 
-    if ($hasBreakglass || $hasBuildSignedOff) {
-      // Log why we are proceeding.
-      if ($hasBreakglass) {
-        $console->writeOut(
-          "%s\n",
-          pht(
-            '<bg:yellow>WARNING</bg>: "BREAKGLASS" detected in the revision summary. '
-            . 'Proceeding with the land operation despite unsuccessful builds.'
-          )
-        );
-      } else {
-        $console->writeOut(
-          "%s\n",
-          pht(
-            '<bg:yellow>WARNING</bg>: "Build-signed-off-by: <email> <reason>" detected in the revision summary. '
-            . 'Proceeding with the land operation despite unsuccessful builds.'
-          )
-        );
-      }
-    } else {
-      // If neither condition is met, abort the operation.
-      $console->writeOut(
-        "%s\n",
+    if ($hasBreakglass) {
+      $this->writeWarn(
+        pht("WARNING"),
         pht(
-          '<bg:red>ERROR</bg>: Neither "BREAKGLASS" nor "Build-signed-off-by: <email> <reason>" '
-          . 'was found in the revision summary. Aborting land operation because blocking builds are failing.'
-        )
-      );
+          '"BREAKGLASS" detected in the revision summary. Proceeding with the land operation despite unsuccessful builds.'));
+    } else {
+      $console->writeErr(
+        "%s\n",
+        pht('Aborting land operation because blocking builds are failing. Use BREAKGLASS if this is an emergency.'));
       throw new ArcanistBuildableNotPassingException();
     }
   }
