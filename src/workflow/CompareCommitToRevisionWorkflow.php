@@ -214,23 +214,12 @@ EOTEXT
     // compare the two
     if ($local_diff !== $reviewed_diff) {
       // optionally save the diffs to a files for debugging
-      $save_dir = $this->getArgument('keep-diffs');
-      $diff_command = '';
-      if ($save_dir) {
-        $landed_filename = sprintf('%s/%s-%s-landed-commit.diff', $save_dir,
-                                   $this->commit, $this->revisionId);
-        file_put_contents($landed_filename, $local_diff);
-        $reviewed_filename = sprintf('%s/%s-%s-reviewed.diff', $save_dir,
-                                     $this->commit, $this->revisionId);
-        file_put_contents($reviewed_filename, $reviewed_diff);
-        $diff_command = sprintf('diff %s %s', $landed_filename,
-                                $reviewed_filename);
-      }
+      $diff_command = $this->saveDiffs($local_diff, $reviewed_diff);
 
       $msg = pht('BAD: Content did not match.  Compared commit %s with '.
                  'revision https://code.uberinternal.com/D%s, diff %s',
                  $this->commit, $this->revisionId, $diff_id);
-      if ($save_dir) {
+      if ($diff_command != "") {
         $msg = pht('%s. %s', $msg, $diff_command);
       }
       echo $msg, "\n";
@@ -243,6 +232,26 @@ EOTEXT
     }
 
     return 0;
+  }
+
+  /**
+   * Save the patches to files for offline review.  Returns a diff command
+   * to diff the two patch files.
+   */
+  private function saveDiffs($landed_diff, $reviewed_diff) {
+    $save_dir = $this->getArgument('keep-diffs');
+    if ($save_dir) {
+      $landed_filename = sprintf('%s/%s-%s-landed-commit.diff', $save_dir,
+                                 $this->commit, $this->revisionId);
+      file_put_contents($landed_filename, $landed_diff);
+      $reviewed_filename = sprintf('%s/%s-%s-reviewed.diff', $save_dir,
+                                   $this->commit, $this->revisionId);
+      file_put_contents($reviewed_filename, $reviewed_diff);
+      $diff_command = sprintf('diff %s %s', $landed_filename,
+                              $reviewed_filename);
+      return $diff_command;
+    }
+    return "";
   }
 
   /**
@@ -340,6 +349,13 @@ EOTEXT
       $val = preg_replace('/^[<>]?\s*@@\s*[+-]\d*,\d*\s*[+-]\d*,\d*\s*@@$/m',
                           '@@ omitted-line-number @@', $val);
     }
+
+    // Strip out all lines of "context", since sometimes that causes incorrect
+    // matches. A "context line" in a patch is a line that starts with a space.
+    $val = preg_replace('/^ .*$/m', '', $val);
+
+    // sometimes, the patches differ only by copy or rename.  Normlize them.
+    $val = preg_replace('/^(copy|rename)(.*)$/m', 'copy-or-rename$2', $val);
     return $val;
   }
 
