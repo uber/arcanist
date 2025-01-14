@@ -38,6 +38,8 @@ abstract class ArcanistWorkflow extends Phobject {
   const COMMIT_DISABLE = 0;
   const COMMIT_ALLOW = 1;
   const COMMIT_ENABLE = 2;
+  const DEFAULT_OBJECTCONFIG_REMOTE_URL = 'gitolite@config.uber.internal:';
+  const GRPC_OBJECTCONFIG_REMOTE_URL = 'oc://';
 
   private $commitMode = self::COMMIT_DISABLE;
 
@@ -1863,6 +1865,11 @@ abstract class ArcanistWorkflow extends Phobject {
 
     $remote_uri = $this->getRepositoryAPI()->getRemoteURI();
     if ($remote_uri !== null) {
+      // Phabricator does not recognise custom gRPC remote scheme used by
+      // Object Config repositories; hence, we substitute the custom scheme
+      // with Gitolite one here
+      $remote_uri = str_replace(self::GRPC_OBJECTCONFIG_REMOTE_URL,
+        self::DEFAULT_OBJECTCONFIG_REMOTE_URL, $remote_uri);
       $query = array(
         'remoteURIs' => array($remote_uri),
       );
