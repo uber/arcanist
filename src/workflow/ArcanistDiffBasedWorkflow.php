@@ -72,6 +72,16 @@ abstract class ArcanistDiffBasedWorkflow extends ArcanistWorkflow {
             }
         }
 
+        // Using staging area remotes retrieved from Phabricator as-is will
+        // lead to arcanist pushing changes through Gitolite Adapter Config;
+        // we avoid that by introducing a custom field in .arcconfig to override
+        // the value set in Phabricator
+        $staging_uri_override =
+          $this->getConfigFromAnySource('uber.diff.staging.uri.override');
+        if ($staging_uri_override) {
+          $staging_uri = $staging_uri_override;
+        }
+
         $api = $this->getRepositoryAPI();
         if (!($api instanceof ArcanistGitAPI)) {
             $this->writeInfo(
