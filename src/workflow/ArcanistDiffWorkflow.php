@@ -3332,7 +3332,7 @@ EOTEXT
     }
 
     $err = phutil_passthru(
-      'git push %Ls -- %s %Ls',
+      'git push -- %s %Ls',
       $staging_uri,
       $ref_list);
 
