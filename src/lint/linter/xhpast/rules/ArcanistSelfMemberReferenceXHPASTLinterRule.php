@@ -43,7 +43,7 @@ final class ArcanistSelfMemberReferenceXHPASTLinterRule
           }
 
           $version_target = $this->version;
-          
+
           if (!$version_target) {
             $version_target = phpversion();
           }
