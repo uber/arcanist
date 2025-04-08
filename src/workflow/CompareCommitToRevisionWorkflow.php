@@ -128,9 +128,10 @@ EOTEXT
       return 1;
     }
 
+    $repo_call_sign = $this->getArgument('repo-call-sign');
+    $this->repositoryId = $this->getArgument('repo-phid');
 
-    if ($this->getArgument('repo-call-sign') &&
-        $this->getArgument('repo-phid')) {
+    if ($repo_call_sign && $this->repositoryId) {
       echo pht(
         'Error: You cannot specify both --repo-call-sign and --repo-phid. '.
         'Please choose one or the other.'
@@ -139,7 +140,6 @@ EOTEXT
     }
 
     // if a call-sign is specified, look up the repository PHID
-    $repo_call_sign = $this->getArgument('repo-call-sign');
     if ($repo_call_sign) {
       $this->repositoryId =
           $this->getRepositoryPHIDFromCallSignConduit($repo_call_sign);
@@ -148,9 +148,6 @@ EOTEXT
                  $repo_call_sign);
         return 1;
       }
-    } else if ($this->getArgument('repo-phid')) {
-      // If the user specified a repo-phid, use that instead of the call-sign
-      $this->repositoryId = $this->getArgument('repo-phid');
     }
 
     // if a revision is not specified, get revision from the commit message
@@ -379,8 +376,11 @@ EOTEXT
     // remove text that says "No newline at end of file"
     $val = preg_replace('/^\\\ No newline at end of file$/m', '', $val);
 
-    // strip out all blank lines
-    $val = trim(preg_replace("/(^[\r\n]|[\r\n]+)/", "\n", $val));
+    // strip out consecutive blank lines
+    $val = preg_replace("/[\r\n]+/", "\n", $val);
+
+    // trim leading/trailing blank lines
+    $val = trim($val);
 
     return $val;
   }
