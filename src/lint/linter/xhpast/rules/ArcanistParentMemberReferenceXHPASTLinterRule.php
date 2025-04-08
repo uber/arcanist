@@ -56,7 +56,7 @@ final class ArcanistParentMemberReferenceXHPASTLinterRule
           }
 
           $version_target = $this->version;
-          
+
           if ($version_target === null) {
             $version_target = phpversion();
           }

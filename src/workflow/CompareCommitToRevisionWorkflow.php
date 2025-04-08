@@ -86,6 +86,13 @@ EOTEXT
           'The phab repo call-sign for the commit. e.g., GOCODVJ for go-code.'),
       ),
 
+      'repo-phid' => array(
+        'param' => 'phid',
+        'help' => pht(
+          'The repository PHID for the commit. Mutually exclusive with '.
+          'repo-call-sign parameter. e.g., PHID-REPO-44ztfu4siycp4tnveaoh'),
+      ),
+
       'keep-diffs' => array(
         'param' => 'directory',
         'help' => pht(
@@ -106,7 +113,6 @@ EOTEXT
           'specify if we to get commit information from a local git enlistment'.
           ' instead of getting the data from conduit.'),
       ),
-
     );
   }
 
@@ -122,9 +128,18 @@ EOTEXT
       return 1;
     }
 
+    $repo_call_sign = $this->getArgument('repo-call-sign');
+    $this->repositoryId = $this->getArgument('repo-phid');
+
+    if ($repo_call_sign && $this->repositoryId) {
+      echo pht(
+        'Error: You cannot specify both --repo-call-sign and --repo-phid. '.
+        'Please choose one or the other.'
+      );
+      return 1;
+    }
 
     // if a call-sign is specified, look up the repository PHID
-    $repo_call_sign = $this->getArgument('repo-call-sign');
     if ($repo_call_sign) {
       $this->repositoryId =
           $this->getRepositoryPHIDFromCallSignConduit($repo_call_sign);
@@ -345,6 +360,7 @@ EOTEXT
     $changes = id(new ArcanistDiffParser())->parseDiff($text);
     ksort($changes);
     $val = ArcanistBundle::newFromChanges($changes)->toGitPatch();
+
     if (!$this->getArgument('no-normalize-line-numbers')) {
       $val = preg_replace('/^[<>]?\s*@@\s*[+-]\d*,\d*\s*[+-]\d*,\d*\s*@@$/m',
                           '@@ omitted-line-number @@', $val);
@@ -354,8 +370,18 @@ EOTEXT
     // matches. A "context line" in a patch is a line that starts with a space.
     $val = preg_replace('/^ .*$/m', '', $val);
 
-    // sometimes, the patches differ only by copy or rename.  Normlize them.
+    // sometimes, the patches differ only by copy or rename.  Normalize them.
     $val = preg_replace('/^(copy|rename)(.*)$/m', 'copy-or-rename$2', $val);
+
+    // remove text that says "No newline at end of file"
+    $val = preg_replace('/^\\\ No newline at end of file$/m', '', $val);
+
+    // strip out consecutive blank lines
+    $val = preg_replace("/[\r\n]+/", "\n", $val);
+
+    // trim leading/trailing blank lines
+    $val = trim($val);
+
     return $val;
   }
 
