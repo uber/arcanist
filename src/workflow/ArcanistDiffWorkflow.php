@@ -3230,6 +3230,7 @@ EOTEXT
       }
     }
 
+    $printed = [];
     foreach ($files as $key => $file) {
       $spec = $need_upload[$key];
       $phid = $file->getPHID();
@@ -3238,7 +3239,11 @@ EOTEXT
       $type = $spec['type'];
       $change->setMetadata("{$type}:binary-phid", $phid);
 
-      echo pht('Uploaded binary data for "%s".', $file->getName())."\n";
+      $fileName = $file->getName();
+      if (!isset($printed[$fileName])) {
+          echo pht('Uploaded binary data for "%s".', $fileName) . "\n";
+          $printed[$fileName] = true;
+      }
     }
 
     echo pht('Upload complete.')."\n";
