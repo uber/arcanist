@@ -455,6 +455,11 @@ EOTEXT
           'advice'    => pht('%s suppresses lint.', '--head'),
         ),
       ),
+      'automatically-convert-non-utf' => array(
+        'help' => pht(
+          'Automatically convert invalid UTF-8 sequences '.
+          'to binary.'),
+      ),
     );
 
     return $arguments;
@@ -1191,12 +1196,15 @@ EOBANNER;
       $file_list = '    '.implode("\n    ", $file_list);
       echo $file_list;
 
-      if (!phutil_console_confirm($confirm, $default_no = false)) {
-        throw new ArcanistUsageException(pht('Aborted workflow to fix UTF-8.'));
-      } else {
+      if (
+        $this->getArgument('automatically-convert-non-utf')
+        || phutil_console_confirm($confirm, $default_no = false)
+      ) {
         foreach ($utf8_problems as $change) {
           $change->convertToBinaryChange($repository_api);
         }
+      } else {
+        throw new ArcanistUsageException(pht('Aborted workflow to fix UTF-8.'));
       }
     }
 
@@ -3258,6 +3266,7 @@ EOBANNER;
       }
     }
 
+    $printed = [];
     foreach ($files as $key => $file) {
       $spec = $need_upload[$key];
       $phid = $file->getPHID();
@@ -3266,7 +3275,11 @@ EOBANNER;
       $type = $spec['type'];
       $change->setMetadata("{$type}:binary-phid", $phid);
 
-      echo pht('Uploaded binary data for "%s".', $file->getName())."\n";
+      $fileName = $file->getName();
+      if (!isset($printed[$fileName])) {
+          echo pht('Uploaded binary data for "%s".', $fileName) . "\n";
+          $printed[$fileName] = true;
+      }
     }
 
     echo pht('Upload complete.')."\n";
