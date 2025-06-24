@@ -227,7 +227,7 @@ EOTEXT
         array('diffID' => $diff_id)));
 
     // compare the two
-    if ($local_diff !== $reviewed_diff) {
+    if (!$this->checkContentMatchBetweenDiffs($local_diff, $reviewed_diff)) {
       // optionally save the diffs to a files for debugging
       $diff_command = $this->saveDiffs($local_diff, $reviewed_diff);
 
@@ -383,6 +383,38 @@ EOTEXT
     $val = trim($val);
 
     return $val;
+  }
+
+  /**
+   * Check if all lines from the local diff exist in the reviewed diff.
+   * This allows for some flexibility in that the lines in the local diff are a subset of the lines in the reviewed diff.
+   * This is useful because the reviewed diff may contain lines that are not in the local diff, which can happen when there
+   * is no rebase with the default branch.
+   */
+  private function checkContentMatchBetweenDiffs($local_diff, $reviewed_diff) {
+    $local_diff_lines = explode("\n", $local_diff);
+    $reviewed_diff_lines = explode("\n", $reviewed_diff);
+
+    $local_diff_line_idx = 0;
+    $reviewed_diff_line_idx = 0;
+
+    while ($local_diff_line_idx < count($local_diff_lines)) {
+      // Check if we have reached the end of the reviewed diff
+      // if so and we are still in the local diff, return false (meaning at least one line in the local diff
+      // wasn't in the reviewed diff)
+      if ($reviewed_diff_line_idx >= count($reviewed_diff_lines)) {
+        return false;
+      }
+
+      // Check if the current line in the local diff matches the current line in the reviewed diff
+      // if not, move to the next line in the reviewed diff
+      if ($local_diff_lines[$local_diff_line_idx] === $reviewed_diff_lines[$reviewed_diff_line_idx]) {
+        $local_diff_line_idx++;
+      }
+      $reviewed_diff_line_idx++;
+    }
+
+    return true;
   }
 
   /**
