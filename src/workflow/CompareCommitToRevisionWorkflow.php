@@ -392,29 +392,41 @@ EOTEXT
    * is no rebase with the default branch.
    */
   private function checkContentMatchBetweenDiffs($local_diff, $reviewed_diff) {
-    $local_diff_lines = explode("\n", $local_diff);
-    $reviewed_diff_lines = explode("\n", $reviewed_diff);
+    $local_iterator = $this->lineGenerator($local_diff);
+    $reviewed_iterator = $this->lineGenerator($reviewed_diff);
 
-    $local_diff_line_idx = 0;
-    $reviewed_diff_line_idx = 0;
+    // Start both iterators
+    $local_iterator->rewind();
+    $reviewed_iterator->rewind();
 
-    while ($local_diff_line_idx < count($local_diff_lines)) {
-      // Check if we have reached the end of the reviewed diff
-      // if so and we are still in the local diff, return false (meaning at least one line in the local diff
-      // wasn't in the reviewed diff)
-      if ($reviewed_diff_line_idx >= count($reviewed_diff_lines)) {
+    // Continue while there are lines in the local diff to match
+    while ($local_iterator->valid()) {
+      // Check if we've exhausted the reviewed diff while still having local lines
+      if (!$reviewed_iterator->valid()) {
         return false;
       }
 
-      // Check if the current line in the local diff matches the current line in the reviewed diff
-      // if not, move to the next line in the reviewed diff
-      if ($local_diff_lines[$local_diff_line_idx] === $reviewed_diff_lines[$reviewed_diff_line_idx]) {
-        $local_diff_line_idx++;
+      // Get current lines from both iterators
+      $local_line = $local_iterator->current();
+      $reviewed_line = $reviewed_iterator->current();
+
+      // If lines match, advance the local iterator (we found this line)
+      if ($local_line === $reviewed_line) {
+        $local_iterator->next();
       }
-      $reviewed_diff_line_idx++;
+
+      // Always advance the reviewed iterator to check the next line
+      $reviewed_iterator->next();
     }
 
+    // If we've matched all local lines, return true
     return true;
+  }
+
+  private function lineGenerator(string $text): Generator {
+    foreach (explode("\n", $text) as $line) {
+      yield $line;
+    }
   }
 
   /**
