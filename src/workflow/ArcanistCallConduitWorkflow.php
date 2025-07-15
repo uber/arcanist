@@ -104,6 +104,9 @@ EOTEXT
 
             Get Repository:
             $ echo '{"constraints":{"phids":["PHID-REPO-uexvk77yeovy63fhokqw"]}}' | arc call-conduit diffusion.repository.search
+
+            Get Repository by Callsign:
+            $ echo '{"constraints":{"callsigns":["GOCODVJ"]}}' | arc call-conduit diffusion.repository.search
 EOTEXT
       );
   }
