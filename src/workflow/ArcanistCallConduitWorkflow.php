@@ -26,10 +26,78 @@ EOTEXT
             - Results are written to stdout as a JSON blob.
 
           This workflow is primarily useful for writing scripts which integrate
-          with Phabricator. Examples:
+          with Phabricator.
 
+          Examples:
+            
+            Ping (check connectivity):
             $ echo '{}' | arc call-conduit conduit.ping
-            $ echo '{"phid":"PHID-FILE-xxxx"}' | arc call-conduit file.download
+
+            Get current user:
+            echo '{}' | arc call-conduit user.whoami
+
+            Get Users:
+            $ echo '{"constraints":{"usernames":["wua", "foo"]}}' | arc call-conduit user.search
+
+            Search Revisions by ID:
+            $ echo '{"constraints":{"ids":[123,456,789]}}' | arc call-conduit differential.revision.search
+            
+            Search Revisions by PHID:
+            $ echo '{"constraints":{"phids":["PHID-DREV-wd4ovydtv4m5nsz6enax"]}}' | arc call-conduit differential.revision.search
+            
+            Search Revisions by User:
+            $ echo '{"constraints":{"authorPHIDs":["PHID-USER-g34zkv234n3rk3xlhgke"]}}' | arc call-conduit differential.revision.search
+
+            Update Revision Title:
+            $ echo '{"transactions":[{"type":"title","value":"my new title"}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            
+            Update Revision Jira:
+            $ echo '{"transactions":[{"type":"uber-jira.issues","value":["CODE-204"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            
+            Update Revision Accept:
+            $ echo '{"transactions":[{"type":"accept","value":true}],"objectIdentifier":"PHID-DREV-sangdbezeh5nfeicqzeg"}' | arc call-conduit differential.revision.edit
+
+            Update Revision Projects (aka Tags):
+            $ echo '{"transactions":[{"type":"projects.add","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            $ echo '{"transactions":[{"type":"projects.remove","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            $ echo '{"transactions":[{"type":"projects.set","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+
+            Get Projects (aka Tags):
+            $ echo '{"constraints":{"ids":[13050281]},"attachments":{"projects":true}}' | arc call-conduit differential.revision.search
+            $ echo '{"constraints":{"phids":["PHID-PROJ-u4i3446wedyolppkckbp"]}}' | arc call-conduit project.search
+
+            Get Comments
+            $ echo '{"objectIdentifier":"D13050281"}' | arc call-conduit transaction.search
+            
+            Create General Comment
+            $ echo '{"revision_id":13050281,"message":"hi"}' | arc call-conduit differential.createcomment
+            
+            Create General Comment & Accept
+            $ echo '{"revision_id":13050281,"message":"a general comment!","action":"accept"}' | arc call-conduit differential.createcomment
+            
+            Create Inline Comment
+            $ echo '{"revisionID":13050281,"diffID":36482097,"filePath":"src/infra/devplatform/code-infra/code-review-ux/goo","isNewFile":true,"lineNumber":1,"content":"making an inline comment"}' | arc call-conduit differential.createinline
+
+            Create Inline Comment (threaded comment)
+            $ echo '{"revisionID":13050281,"diffID":36482097,"filePath":"src/infra/devplatform/code-infra/code-review-ux/goo","isNewFile":true,"lineNumber":1,"content":"making a comment thread","replyToCommentID":114219845}' | arc call-conduit differential.createinline
+
+            Get Buildable:
+            $ echo '{"constraints":{"containerPHIDs":["PHID-DREV-zp4o4lfpsfwhnkglxln3"]}}' | arc call-conduit harbormaster.buildable.search
+            
+            Get Build:
+            $ echo '{"constraints":{"buildables":["PHID-HMBB-qdryny55lxb5k3zjcpwr"]}}' | arc call-conduit harbormaster.build.search
+            
+            Get Build Targets:
+            $ echo '{"constraints":{"buildPHIDs":["PHID-HMBD-bx3g3fvgi62z5txlgnom"]},"order":"newest"}' | arc call-conduit harbormaster.target.search
+            
+            Get Build Target Logs:
+            $ echo '{"constraints":{"buildTargetPHIDs":["PHID-HMBT-cdnilgbxily6lmkss3oz"]},"order":"newest"}' | arc call-conduit harbormaster.log.search
+
+            Get File (returns file as base64-encoded string):
+            echo "{\"phid\":\"PHID-FILE-477xrgjyhhxd4qcurgtx\"}" | arc call-conduit file.download
+
+            Get Repository:
+            $ echo '{"constraints":{"phids":["PHID-REPO-uexvk77yeovy63fhokqw"]}}' | arc call-conduit diffusion.repository.search
 EOTEXT
       );
   }
