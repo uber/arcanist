@@ -73,19 +73,19 @@ EOTEXT
             Get Projects Details:
             $ echo '{"constraints":{"phids":["PHID-PROJ-u4i3446wedyolppkckbp"]}}' | arc call-conduit project.search
 
-            Get Comments
+            Get Comments:
             $ echo '{"objectIdentifier":"D13050281"}' | arc call-conduit transaction.search
             
-            Create General Comment
+            Create General Comment:
             $ echo '{"revision_id":13050281,"message":"hi"}' | arc call-conduit differential.createcomment
             
-            Create General Comment & Accept
+            Create General Comment & Accept:
             $ echo '{"revision_id":13050281,"message":"a general comment!","action":"accept"}' | arc call-conduit differential.createcomment
             
-            Create Inline Comment
+            Create Inline Comment:
             $ echo '{"revisionID":13050281,"diffID":36482097,"filePath":"src/infra/devplatform/code-infra/code-review-ux/goo","isNewFile":true,"lineNumber":1,"content":"making an inline comment"}' | arc call-conduit differential.createinline
 
-            Create Inline Comment (threaded comment)
+            Create Inline Comment (threaded comment):
             $ echo '{"revisionID":13050281,"diffID":36482097,"filePath":"src/infra/devplatform/code-infra/code-review-ux/goo","isNewFile":true,"lineNumber":1,"content":"making a comment thread","replyToCommentID":114219845}' | arc call-conduit differential.createinline
 
             Get Buildable:
