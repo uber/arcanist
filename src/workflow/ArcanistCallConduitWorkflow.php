@@ -57,13 +57,19 @@ EOTEXT
             Update Revision Accept:
             $ echo '{"transactions":[{"type":"accept","value":true}],"objectIdentifier":"PHID-DREV-sangdbezeh5nfeicqzeg"}' | arc call-conduit differential.revision.edit
 
-            Update Revision Projects (aka Tags):
+            Add Projects to Revision:
             $ echo '{"transactions":[{"type":"projects.add","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            
+            Remove Projects from Revision:
             $ echo '{"transactions":[{"type":"projects.remove","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
+            
+            Set Projects on Revision:
             $ echo '{"transactions":[{"type":"projects.set","value":["PHID-PROJ-u4i3446wedyolppkckbp"]}],"objectIdentifier":"PHID-DREV-zp4o4lfpsfwhnkglxln3"}' | arc call-conduit differential.revision.edit
 
-            Get Projects (aka Tags):
+            Get Revision's Projects (aka Tags):
             $ echo '{"constraints":{"ids":[13050281]},"attachments":{"projects":true}}' | arc call-conduit differential.revision.search
+            
+            Get Projects Details:
             $ echo '{"constraints":{"phids":["PHID-PROJ-u4i3446wedyolppkckbp"]}}' | arc call-conduit project.search
 
             Get Comments
