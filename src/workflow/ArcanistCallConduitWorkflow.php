@@ -24,6 +24,7 @@ EOTEXT
             - Run this command from a working directory.
             - Call parameters are REQUIRED and read as a JSON blob from stdin.
             - Results are written to stdout as a JSON blob.
+            - Requires a valid Conduit API token set in ~/.arcrc (run `arc install-certificate` to get one)
 
           This workflow is primarily useful for writing scripts which integrate
           with Phabricator.
