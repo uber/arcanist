@@ -34,7 +34,7 @@ EOTEXT
             $ echo '{}' | arc call-conduit conduit.ping
 
             Get current user:
-            echo '{}' | arc call-conduit user.whoami
+            $ echo '{}' | arc call-conduit user.whoami
 
             Get Users:
             $ echo '{"constraints":{"usernames":["wua", "foo"]}}' | arc call-conduit user.search
@@ -94,7 +94,7 @@ EOTEXT
             $ echo '{"constraints":{"buildTargetPHIDs":["PHID-HMBT-cdnilgbxily6lmkss3oz"]},"order":"newest"}' | arc call-conduit harbormaster.log.search
 
             Get File (returns file as base64-encoded string):
-            echo "{\"phid\":\"PHID-FILE-477xrgjyhhxd4qcurgtx\"}" | arc call-conduit file.download
+            $ echo "{\"phid\":\"PHID-FILE-477xrgjyhhxd4qcurgtx\"}" | arc call-conduit file.download
 
             Get Repository:
             $ echo '{"constraints":{"phids":["PHID-REPO-uexvk77yeovy63fhokqw"]}}' | arc call-conduit diffusion.repository.search
