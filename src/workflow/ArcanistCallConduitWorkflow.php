@@ -34,10 +34,10 @@ EOTEXT
             Ping (check connectivity):
             $ echo '{}' | arc call-conduit conduit.ping
 
-            Get current user:
+            Get Current User:
             $ echo '{}' | arc call-conduit user.whoami
 
-            Get Users:
+            Get User Info:
             $ echo '{"constraints":{"usernames":["wua", "foo"]}}' | arc call-conduit user.search
 
             Search Revisions by ID:
