@@ -1318,6 +1318,11 @@ EOTEXT
     if (!$success) {
       throw new ArcanistUsageException($message);
     }
+
+    // Validate entry criteria before proceeding with merge.
+    // This will throw an ArcanistUsageException if the criteria are not met.
+    $this->validateStagingMergeCriteria($id, $staging, $staging_uri);
+
     $prefix = idx($staging, 'prefix', 'phabricator');
     $diff_tag = $this->uberRefProvider->getDiffRefName($prefix, $id);
     echo pht('Fetching diff ref "%s" from staging remote', $diff_tag)."\n";
@@ -1362,6 +1367,84 @@ EOTEXT
     }
 
     return self::SUCCESS;
+  }
+
+  /**
+   * Validate entry criteria for staging merge.
+   * Throws ArcanistUsageException if neither criterion is met.
+   */
+  private function validateStagingMergeCriteria($id, $staging, $staging_uri) {
+    $prefix = idx($staging, 'prefix', 'phabricator');
+    $base_ref = $this->uberRefProvider->getBaseRefName($prefix, $id);
+    $repository_api = $this->getRepositoryAPI();
+
+    // Fetch the base ref to ensure it's available locally
+    echo pht('Fetching base ref "%s" from staging remote', $base_ref)."\n";
+    $err = phutil_passthru(
+      'git fetch --no-tags %s %s',
+      $staging_uri,
+      $base_ref);
+
+    if ($err) {
+      throw new ArcanistUsageException(
+        pht('Failed to fetch base ref "%s" from staging area', $base_ref));
+    }
+
+    // Check if base ref exists in working copy
+    $base_exists_in_working_copy = $repository_api->hasLocalCommit($base_ref);
+    if ($base_exists_in_working_copy) {
+      return;
+    }
+
+    // If base doesn't exist, check if any commit in its history exists
+    $history_has_common_commit = $this->checkBaseHistoryForCommonCommit($base_ref, $repository_api);
+    if ($history_has_common_commit) {
+      return;
+    }
+
+    $error_message = pht(
+      'Cannot merge staging tag: neither entry criteria are satisfied. ' .
+      'Required: Either 1) the base ref "%s" exists in the working copy, ' .
+      'or 2) no commit in the base ref\'s history exists in the working copy. ' .
+      'Neither condition was met.', // TODO: Add engwiki link explaining the error
+      $base_ref);
+    echo pht('ERROR: %s', $error_message)."\n";
+    throw new ArcanistUsageException($error_message);
+  }
+
+  /**
+   * Check if any commit in the base ref's history exists in the working copy.
+   * Returns true if a common commit is found, false otherwise.
+   */
+  private function checkBaseHistoryForCommonCommit($base_ref, $repository_api) {
+    // Get the commit hash of the base ref
+    list($err, $base_commit_hash) = $repository_api->execManualLocal(
+      'rev-parse %s',
+      $base_ref);
+
+    if ($err) {
+      return false;
+    }
+
+    // Get all commits in the base ref's history
+    list($err, $history_stdout) = $repository_api->execManualLocal(
+      'rev-list %s',
+      $base_commit_hash);
+
+    if ($err) {
+      return false;
+    }
+
+    $history_commits = array_filter(explode(PHP_EOL, $history_stdout));
+
+    // Check if any commit in the history exists in the working copy
+    foreach ($history_commits as $commit_hash) {
+      if ($repository_api->hasLocalCommit($commit_hash)) {
+        return true;
+      }
+    }
+
+    return false;
   }
   // UBER CODE END
 }
