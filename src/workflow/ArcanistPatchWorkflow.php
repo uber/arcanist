@@ -1369,7 +1369,9 @@ EOTEXT
   }
 
   /**
-   * Validate entry criteria for staging merge.
+   * Validate entry criteria for staging merge. One of the following criteria must be true to proceed:
+   * 1) base ref exists on branch being merged into (i.e. all changes that will be merged appear on the diff)
+   * 2) no commit in the base ref's history exists in the working copy (i.e. there is no merge-base between base ref and HEAD)
    * Throws ArcanistUsageException if neither criterion is met.
    */
   private function validateStagingMergeCriteria($id, $staging, $staging_uri) {
