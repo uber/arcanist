@@ -1379,32 +1379,28 @@ EOTEXT
 
     // Fetch the base ref of diff
     echo pht('Fetching base ref "%s" from staging remote', $base_ref)."\n";
-    $err = $repository_api->execPassthru('fetch --no-tags %s %s', $staging_uri, $base_ref);
+    $err = phutil_passthru('git fetch --no-tags %s %s', $staging_uri, $base_ref);
     if ($err) {
       throw new ArcanistUsageException(pht('Failed to fetch base ref "%s" from staging area', $base_ref));
     }
 
-    // Check if base ref exists on the current branch of the working copy.
-    // null = error running command, 0 = ancestor, 1 = not ancestor
-    list($exit_code) = $repository_api->execManualLocal("merge-base --is-ancestor %s HEAD", $base_ref);
-    if ($exit_code === null) {
-      throw new ArcanistUsageException(pht('Failed to check if base ref "%s" is ancestor of HEAD', $base_ref));
-    } else if ($exit_code == 0) {
+    // Check if base ref exists on the current branch of the working copy
+    list($err) = $repository_api->execManualLocal("merge-base --is-ancestor %s HEAD", $base_ref);
+    if (!$err) {
       // Base ref is ancestor of HEAD (i.e. all changes that will be merged appear on the diff) - allow merge
       return;
     }
 
-    // Check if ANY commit in base_ref's history is ancestor of HEAD.
-    // i.e. not just whether the base_ref itself is on the current branch, but also whether any of its ancestors are.
+    // Check if any commit in base refs history is ancestor of HEAD
     $history_has_common_commit = $this->hasCommonAncestor($base_ref, $repository_api);
     if (!$history_has_common_commit) {
-      // No common commits in history (could be microrepo -> monorepo migration) - allow merge
+      // No common commits in history (could be microrepo -> monorepo migration)- allow merge
       return;
     }
 
     // Get the SHA for $base_ref using git rev-parse
     list($err, $sha) = $repository_api->execManualLocal('rev-parse %s', $base_ref);
-    if ($err || empty($sha)) {
+    if ($err) {
       throw new ArcanistUsageException(pht('Failed to resolve SHA for base ref "%s"', $base_ref));
     }
 
