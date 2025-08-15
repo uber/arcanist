@@ -9,9 +9,9 @@ class UberArcanistSubmitQueueEngine
   protected $shouldShadow;
   protected $skipUpdateWorkingCopy;
   private $submitQueueRegex;
-  private $tbr;
   private $submitQueueTags;
   private $usesArcFlow;
+  private $skipSubmitQueueChecks;
   private $autolandProjectPhid = 'PHID-PROJ-u4i3446wedyolppkckbp'; // UBER CODE
 
   public function execute() {
@@ -41,9 +41,7 @@ class UberArcanistSubmitQueueEngine
         $this->updateWorkingCopy();
       }
 
-      if ($this->getTbr()) {
-        $this->pushChange();
-      } else if ($this->uberShouldRunSubmitQueue($this->getRevision(), $this->submitQueueRegex)) {
+      if ($this->uberShouldRunSubmitQueue($this->getRevision(), $this->submitQueueRegex)) {
         $this->pushChangeToSubmitQueue();
       } else {
         $this->pushChange();
@@ -103,11 +101,6 @@ class UberArcanistSubmitQueueEngine
    * procedure should be stopped. Return false if tagging was skipped.
    */
   private function tagWithAutoland($revision) {
-    // Check if explicit flags are provided
-    if (true === $this->getTbr()) {
-      return false;
-    }
-
     // check if we have TTY otherwise it is probably automation...
     try {
       phutil_console_require_tty();
@@ -190,15 +183,28 @@ class UberArcanistSubmitQueueEngine
     // Get the latest revision as we could have updated the diff
     // as a result of arc diff
     $revision = $this->getRevision();
-    $statusUrl = $this->submitQueueClient->submitMergeRequest(
-      $remoteUrl,
-      $revision['diffs'][0],
-      $revision['id'],
-      $this->shouldShadow,
-      $this->getTargetOnto());
-    $this->writeInfo(
-      pht('Successfully submitted the request to the Submit Queue.'),
-      pht('Please use "%s" to track your changes', $statusUrl));
+
+    if ($this->getSkipSubmitQueueChecks()) {
+      $statusUrl = $this->submitQueueClient->submitPriorityMergeRequest(
+        $remoteUrl,
+        $revision['diffs'][0],
+        $revision['id'],
+        $this->shouldShadow,
+        $this->getTargetOnto());
+      $this->writeInfo(
+        pht('Successfully submitted the priority merge request to the Submit Queue.'),
+        pht('Please use "%s" to track your changes', $statusUrl));
+    } else {
+      $statusUrl = $this->submitQueueClient->submitMergeRequest(
+        $remoteUrl,
+        $revision['diffs'][0],
+        $revision['id'],
+        $this->shouldShadow,
+        $this->getTargetOnto());
+      $this->writeInfo(
+        pht('Successfully submitted the request to the Submit Queue.'),
+        pht('Please use "%s" to track your changes', $statusUrl));
+    }
   }
 
   public function __construct($submitQueueClient, $conduit, $usesArcFlow = false) {
@@ -247,24 +253,24 @@ class UberArcanistSubmitQueueEngine
     return $this;
   }
 
-  public function getTbr() {
-    if (empty($this->tbr)) {
-      return false;
-    }
-    return $this->tbr;
-  }
-
-  public function setTbr($tbr) {
-    $this->tbr = $tbr;
-    return $this;
-  }
-
   public function getSubmitQueueTags() {
     return $this->submitQueueTags;
   }
 
   public function setSubmitQueueTags($submitQueueTags) {
     $this->submitQueueTags = $submitQueueTags;
+    return $this;
+  }
+
+  public function getSkipSubmitQueueChecks() {
+    if (empty($this->skipSubmitQueueChecks)) {
+      return false;
+    }
+    return $this->skipSubmitQueueChecks;
+  }
+
+  public function setSkipSubmitQueueChecks($skipSubmitQueueChecks) {
+    $this->skipSubmitQueueChecks = $skipSubmitQueueChecks;
     return $this;
   }
 
@@ -322,16 +328,6 @@ class UberArcanistSubmitQueueEngine
     }
 
     return false;
-  }
-
-  private function uberTbrGetExcuse($prompt, $history) {
-    $console = PhutilConsole::getConsole();
-    $history = $this->getRepositoryAPI()->getScratchFilePath($history);
-    $excuse = phutil_console_prompt($prompt, $history);
-    if ($excuse == '') {
-      throw new ArcanistUserAbortException();
-    }
-    return $excuse;
   }
 
   protected function getLandingCommits() {

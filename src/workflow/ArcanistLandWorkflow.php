@@ -26,8 +26,8 @@ final class ArcanistLandWorkflow extends ArcanistWorkflow {
   private $submitQueueUri;
   private $submitQueueShadowMode;
   private $submitQueueClient;
-  private $tbr;
   private $submitQueueTags;
+  private $skipSubmitQueueChecks;
 
   private $revision;
   private $messageFile;
@@ -231,14 +231,6 @@ EOTEXT
           'actually modify or land the commits.'),
       ),
       '*' => 'branch',
-      'tbr' => array(
-        'help' => pht(
-          'tbr: To-Be-Reviewed. Skips the submit-queue if the submit-queue '.
-          'is enabled for this repo.'),
-        'supports' => array(
-          'git',
-        ),
-      ),
       'uber-skip-update' => array(
         'help' => pht('uber-skip-update: Skip updating working copy'),
         'supports' => array('git',),
@@ -250,6 +242,15 @@ EOTEXT
         'help' => pht(
           'force using the submit-queue if the submit-queue is configured '.
           'for this repo.'),
+        'supports' => array(
+          'git',
+        ),
+      ),
+      'skip-submitqueue-checks' => array(
+        'help' => pht(
+          'Skip SubmitQueue checks and jump to the front of the queue. '.
+          'This is meant to be used for emergency cases when the queue is blocked/backlogged. '.
+          'BREAKGLASS is required.'),
         'supports' => array(
           'git',
         ),
@@ -373,9 +374,9 @@ EOTEXT
           $engine
             ->setRevision($this->revision)
             ->setSubmitQueueRegex($this->submitQueueRegex)
-            ->setTbr($this->tbr)
             ->setSubmitQueueTags($this->submitQueueTags)
             ->setSkipUpdateWorkingCopy($this->getArgument('uber-skip-update'))
+            ->setSkipSubmitQueueChecks($this->skipSubmitQueueChecks)
             ->setBuildMessageCallback(array($this, 'uberBuildEngineMessage'));
       }
       // UBER CODE END
@@ -574,11 +575,6 @@ EOTEXT
         false
     );
 
-    if ($this->getArgument('tbr')) {
-      $this->tbr = true;
-    } else {
-      $this->tbr = false;
-    }
     if ($this->shouldUseSubmitQueue) {
       $this->submitQueueUri = $this->getConfigFromAnySource('uber.land.submitqueue.uri');
       $this->submitQueueShadowMode = $this->getConfigFromAnySource('uber.land.submitqueue.shadow');
@@ -594,6 +590,8 @@ EOTEXT
           $this->getConduit()->getConduitToken());
       $this->submitQueueTags = $this->getConfigFromAnySource('uber.land.submitqueue.tags');
     }
+
+    $this->skipSubmitQueueChecks = $this->getArgument('skip-submitqueue-checks');
   }
 
   private function validate() {
