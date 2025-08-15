@@ -48,7 +48,7 @@ final class UberSubmitQueueClient extends Phobject {
       if ($shouldShadow) {
         $params['shouldShadow'] = "true";
       }
-      return $this->callMethodSynchronous("POST", "/priority_merge_requests", $params);
+      return $this->callMethodSynchronous("POST", "/v2/priority_merge_request", $params);
   }
 
   public function submitMergeStackRequest($remoteUrl, $stack, $shouldShadow, $targetOnto) {
@@ -74,6 +74,15 @@ final class UberSubmitQueueClient extends Phobject {
         // protocol edge cases that HTTPFuture does not support.
         $core_future = new HTTPSFuture($req);
         $core_future->addHeader('Host', $this->getHost());
+
+        // Add uSSO token to the request
+        $usso = new UberUSSO();
+        $hostname = parse_url($this->uri, PHP_URL_HOST);
+        $token = $usso->maybeUseUSSOToken($hostname);
+        if (!$token) {
+          $token = $usso->getUSSOToken($hostname);
+        }
+        $core_future->addHeader('Authorization', "Bearer {$token}");
 
         $core_future->setMethod($method);
         $core_future->setTimeout($this->timeout);
