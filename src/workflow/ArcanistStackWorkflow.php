@@ -21,7 +21,6 @@ final class ArcanistStackWorkflow extends ArcanistWorkflow {
   private $submitQueueUri;
   private $submitQueueShadowMode;
   private $submitQueueClient;
-  private $tbr;
   private $submitQueueTags;
   private $rebaseCheckEnabled;
   private $revisions; // Revision Info in stack order
@@ -61,13 +60,13 @@ EOTEXT
 
           FAQS:
           1. What are the Submit Queue guarantees for Stacked-Diffs ?
-              (a) Submit Queue guarantees atomicity for landing all diffs within a single stack. Either all diffs in the 
+              (a) Submit Queue guarantees atomicity for landing all diffs within a single stack. Either all diffs in the
                   stack gets pushed to the remote together (in one single git push) or none of them is pushed.
-              (b) Submit Queue will preserve the commit points at each diff in the stack. Currently, arc land uses one 
-                  commit-message if there are many commits corresponding to a differential. Arc stack will retain that 
+              (b) Submit Queue will preserve the commit points at each diff in the stack. Currently, arc land uses one
+                  commit-message if there are many commits corresponding to a differential. Arc stack will retain that
                   behavior (one commit per diff in the stack) but will NOT squash the commits for
                   different diffs in the stack to one commit.
-              (c) Submit Queue will run build validations at each diff in the stack to ensure each commit point keeps 
+              (c) Submit Queue will run build validations at each diff in the stack to ensure each commit point keeps
                   the master green.
 
           2. How does arc-stack detect the list of revisions in the stack ?
@@ -88,7 +87,7 @@ EOTEXT
              ensures each revision in the stack is stacked against the latest diff of its parent.
 
           6. Will arc-stack do auto-rebase if it detects inconsistencies ?
-             If arc stack detects rebase inconsistencies, Users will be prompted to rebase. Arcanist can also try to 
+             If arc stack detects rebase inconsistencies, Users will be prompted to rebase. Arcanist can also try to
              auto rebase and arc-diff on behalf of user but this is ONLY BEST EFFORT. If there are merge-conflicts,
              it would exit and users would need to fix the conflicts and cleanup branches themselves.
              Users are still expected to do rebase the first diff in the stack against the target branch before
@@ -228,13 +227,6 @@ EOTEXT
           'actually modify or land the commits.'),
       ),
       '*' => 'branch',
-      'tbr' => array(
-        'help' => pht(
-          'tbr: To-Be-Reviewed. Not supported. Use arc-land.'),
-        'supports' => array(
-          'git',
-        ),
-      ),
       'uber-skip-update' => array(
         'help' => pht('uber-skip-update: Skip updating working copy'),
         'supports' => array('git',),
@@ -337,10 +329,6 @@ EOTEXT
     if ( !$this->isGit) {
       throw new ArcanistUsageException("arc stack supports only git version control");
     }
-
-    if ($this->tbr) {
-      throw new ArcanistUsageException("Use arc land if you want to do tbr");
-    }
   }
 
   public function run() {
@@ -359,7 +347,6 @@ EOTEXT
           $this->getUsesArcFlow()))
         ->setTraceModeEnabled($this->traceModeEnabled)
         ->setSubmitQueueRegex($this->submitQueueRegex)
-        ->setTbr($this->tbr)
         ->setRebaseCheckEnabled($this->rebaseCheckEnabled)
         ->setSubmitQueueTags($this->submitQueueTags)
         ->setSkipUpdateWorkingCopy($this->getArgument('uber-skip-update'))
@@ -589,11 +576,7 @@ EOTEXT
       false
     );
 
-    if ($this->getArgument('tbr')) {
-      $this->tbr = true;
-    } else {
-      $this->tbr = false;
-    }
+
     if ($this->shouldUseSubmitQueue) {
       $this->submitQueueUri = $this->getConfigFromAnySource('uber.land.submitqueue.uri');
       $this->submitQueueShadowMode = $this->getConfigFromAnySource('uber.land.submitqueue.shadow');

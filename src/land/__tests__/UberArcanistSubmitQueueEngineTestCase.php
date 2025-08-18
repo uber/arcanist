@@ -39,14 +39,10 @@ final class UberArcanistSubmitQueueEngineTestCase extends PhutilTestCase {
         return 'http://submit-queue.example.com/status/123';
       }
 
-      public function submitPriorityMergeRequest($remoteUrl, $diffId, $revisionId, $shouldShadow, $targetOnto) {
+      public function submitPriorityMergeRequest($revisionId) {
         $this->last_call_method = 'submitPriorityMergeRequest';
         $this->last_call_params = array(
-          'remoteUrl' => $remoteUrl,
-          'diffId' => $diffId,
-          'revisionId' => $revisionId,
-          'shouldShadow' => $shouldShadow,
-          'targetOnto' => $targetOnto
+          'revisionId' => $revisionId
         );
         return 'http://submit-queue.example.com/priority/456';
       }
@@ -312,11 +308,8 @@ final class UberArcanistSubmitQueueEngineTestCase extends PhutilTestCase {
     // Verify the correct method was called
     $this->assertEqual('submitPriorityMergeRequest', $mock_client->last_call_method);
 
-    // Verify all parameters were passed correctly in a complex scenario
-    $this->assertEqual('git@test.com:foo/bar.git', $mock_client->last_call_params['remoteUrl']);
-    $this->assertEqual('222', $mock_client->last_call_params['diffId']);
+    // Verify the revisionId parameter was passed correctly
     $this->assertEqual('111', $mock_client->last_call_params['revisionId']);
-    $this->assertEqual(false, $mock_client->last_call_params['shouldShadow']);
-    $this->assertEqual('main', $mock_client->last_call_params['targetOnto']);
+    $this->assertEqual(1, count($mock_client->last_call_params), 'Should only have one parameter');
   }
 }

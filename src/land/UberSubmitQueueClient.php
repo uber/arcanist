@@ -37,17 +37,11 @@ final class UberSubmitQueueClient extends Phobject {
     }
 
     // Sends a request to priority merge in SubmitQueue, which will skip the checks and go to the front of the queue.
-    public function submitPriorityMergeRequest($remoteUrl, $diffId, $revisionId, $shouldShadow, $targetOnto) {
+    public function submitPriorityMergeRequest($revisionId) {
       $params = array(
-        'remote' => $remoteUrl,
-        'diffId' => $diffId,
         'revisionId' => $revisionId,
-        'targetOnto' => $targetOnto,
         'conduitToken' => $this->conduitToken,
       );
-      if ($shouldShadow) {
-        $params['shouldShadow'] = "true";
-      }
       return $this->callMethodSynchronous("POST", "/v2/priority_merge_request", $params);
   }
 

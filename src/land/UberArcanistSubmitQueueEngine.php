@@ -185,12 +185,7 @@ class UberArcanistSubmitQueueEngine
     $revision = $this->getRevision();
 
     if ($this->getSkipSubmitQueueChecks()) {
-      $statusUrl = $this->submitQueueClient->submitPriorityMergeRequest(
-        $remoteUrl,
-        $revision['diffs'][0],
-        $revision['id'],
-        $this->shouldShadow,
-        $this->getTargetOnto());
+      $statusUrl = $this->submitQueueClient->submitPriorityMergeRequest($revision['id']);
       $this->writeInfo(
         pht('Successfully submitted the priority merge request to the Submit Queue.'),
         pht('Please use "%s" to track your changes', $statusUrl));
