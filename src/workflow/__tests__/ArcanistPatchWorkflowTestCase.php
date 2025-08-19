@@ -96,7 +96,7 @@ final class ArcanistPatchWorkflowTestCase extends PhutilTestCase {
       }
 
       public function execPassthru($command, $args) {
-        if ($command === 'fetch --no-tags %s %s') {
+        if ($command === 'fetch --no-tags %s %s:%s') {
           return $this->options['fetch_success'] ? 0 : 1;
         }
         throw new Exception("Unexpected execPassthru command: '$command'");
