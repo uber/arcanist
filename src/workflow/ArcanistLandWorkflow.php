@@ -250,7 +250,7 @@ EOTEXT
         'help' => pht(
           'Skip SubmitQueue checks and jump to the front of the queue. '.
           'This is meant to be used for emergency cases when the queue is blocked/backlogged. '.
-          'BREAKGLASS is required.'),
+          'BREAKGLASS is required. See: https://t.uber.com/sq-priority-requests'),
         'supports' => array(
           'git',
         ),
