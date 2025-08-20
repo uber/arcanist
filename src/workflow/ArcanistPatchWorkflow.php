@@ -1381,7 +1381,7 @@ EOTEXT
 
     // Fetch the base ref of diff
     echo pht('Fetching base ref "%s" from staging remote', $base_ref)."\n";
-    $err = $repository_api->execPassthru('fetch --no-tags %s %s:%s', $staging_uri, $base_ref, $base_ref);
+    $err = $repository_api->execPassthru('fetch --no-tags %s +%s:%s', $staging_uri, $base_ref, $base_ref);
     if ($err) {
       throw new ArcanistUsageException(pht('Failed to fetch base ref "%s" from staging area', $base_ref));
     }
