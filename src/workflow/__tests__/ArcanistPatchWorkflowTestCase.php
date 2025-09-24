@@ -88,46 +88,14 @@ final class ArcanistPatchWorkflowTestCase extends PhutilTestCase {
 
     $options = array_merge($defaults, $options);
 
-    $mock = new class($options) extends stdClass {
-      private $options;
-
-      public function __construct($options) {
-        $this->options = $options;
-      }
-
-      public function execPassthru($command, $args) {
-        if ($command === 'fetch --no-tags %s +%s:%s') {
-          return $this->options['fetch_success'] ? 0 : 1;
-        }
-        throw new Exception("Unexpected execPassthru command: '$command'");
-      }
-
-      public function execManualLocal($command, $args) {
-        if ($command === 'merge-base %s HEAD') {
-          return array($this->options['has_common_ancestor'] ? 0 : 1, $this->options['merge_base_output']);
-        } elseif ($command === 'merge-base --is-ancestor %s HEAD') {
-          return array($this->options['merge_base_ancestor_output']);
-        } elseif ($command === 'rev-parse %s') {
-          return array($this->options['base_rev_parse_success'] ? 0 : 1, $this->options['base_rev_parse_output']);
-        }
-        throw new Exception("Unexpected execManualLocal command: '$command'");
-      }
-    };
+    $mock = new PatchWorkflowMockRepositoryAPI($options);
 
     return $mock;
   }
 
   // Helper method to create a mock UberRefProvider
   private function createMockUberRefProvider() {
-    $mock = new class() extends stdClass {
-      public function getBaseRefName($prefix, $id, $current_value = null) {
-        return "refs/{$prefix}/base/{$id}";
-      }
-
-      public function getDiffRefName($prefix, $id, $current_value = null) {
-        return "refs/{$prefix}/diff/{$id}";
-      }
-    };
+    $mock = new PatchWorkflowMockUberRefProvider();
 
     return $mock;
   }
