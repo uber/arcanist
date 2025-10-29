@@ -924,17 +924,15 @@ EOBANNER;
     );
 
     $repo_name = $this->getRepositoryName();
+    
+    // If repo is not in Phabricator, don't block
+    // This exempts objectconfig repos that are not registered in Phabricator
     if ($repo_name === null) {
-      return false;
+      return true;
     }
 
     // Check if repo is in the explicit deny list
     if (in_array($repo_name, $denied_repos)) {
-      return true;
-    }
-
-    // Check if repo starts with "objectconfig/"
-    if (strpos($repo_name, 'objectconfig/') === 0) {
       return true;
     }
 
