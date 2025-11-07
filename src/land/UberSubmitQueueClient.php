@@ -1,11 +1,11 @@
 <?php
 
-final class UberSubmitQueueClient extends Phobject {
+class UberSubmitQueueClient extends Phobject {
 
     private $uri;
     private $host;
     private $conduitToken;
-    private $timeout;
+    protected $timeout;
 
     public function __construct($uri, $conduitToken, $timeout=10) {
         $this->uri = new PhutilURI($uri);
@@ -42,7 +42,7 @@ final class UberSubmitQueueClient extends Phobject {
         'revisionId' => $revisionId,
         'conduitToken' => $this->conduitToken,
       );
-      return $this->callMethodSynchronous("POST", "/v2/priority_merge_request", $params);
+      return $this->callMethodSynchronous("POST", "/v2/priority_merge_request", $params, true);
   }
 
   public function submitMergeStackRequest($remoteUrl, $stack, $shouldShadow, $targetOnto) {
@@ -58,25 +58,27 @@ final class UberSubmitQueueClient extends Phobject {
     return $this->callMethodSynchronous("POST", "/merge_requests", $params);
   }
 
-    private function callMethodSynchronous($method, $api, array $params) {
-        return $this->callMethod($method, $api, $params)->resolve();
+    private function callMethodSynchronous($method, $api, array $params, $use_usso_token = false) {
+        return $this->callMethod($method, $api, $params, $use_usso_token)->resolve();
     }
 
-    private function callMethod($method, $api, array $params) {
+    protected function callMethod($method, $api, array $params, $use_usso_token = false) {
         $req = id(clone $this->uri)->setPath('/api'.$api.'?'.http_build_query($params));
         // Always use the cURL-based HTTPSFuture, for proxy support and other
         // protocol edge cases that HTTPFuture does not support.
         $core_future = new HTTPSFuture($req);
         $core_future->addHeader('Host', $this->getHost());
 
-        // Add uSSO token to the request
-        $usso = new UberUSSO();
-        $hostname = parse_url($this->uri, PHP_URL_HOST);
-        $token = $usso->maybeUseUSSOToken($hostname);
-        if (!$token) {
-          $token = $usso->getUSSOToken($hostname);
+        // Add uSSO token to the request only when using --skip-submitqueue-checks flag
+        if ($use_usso_token) {
+          $usso = new UberUSSO();
+          $hostname = parse_url($this->uri, PHP_URL_HOST);
+          $token = $usso->maybeUseUSSOToken($hostname);
+          if (!$token) {
+            $token = $usso->getUSSOToken($hostname);
+          }
+          $core_future->addHeader('Authorization', "Bearer {$token}");
         }
-        $core_future->addHeader('Authorization', "Bearer {$token}");
 
         $core_future->setMethod($method);
         $core_future->setTimeout($this->timeout);
