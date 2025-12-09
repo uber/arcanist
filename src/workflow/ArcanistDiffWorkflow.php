@@ -782,6 +782,11 @@ EOTEXT
       return;
     }
 
+    // Skip if any changed files are under librelease paths
+    if ($this->areAnyChangedFilesUnderLibreleasePaths()) {
+      return;
+    }
+
     // Block diff creation and show GitHub PR instructions
     $this->console->writeOut(
       "%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n\n%s\n",
@@ -942,6 +947,72 @@ EOBANNER;
     }
 
     return false;
+  }
+
+  /**
+   * Check if any changed files in the diff are under librelease paths.
+   * Reads configuration from LibReleaseTestEngine in unit.engine.multi.engines.
+   * If any file is under a librelease path, we skip the GitHub PR blocking behavior.
+   * @return bool True if any changed file is under a librelease path, false otherwise.
+   */
+  private function areAnyChangedFilesUnderLibreleasePaths() {
+    try {
+      // Get librelease paths configuration from LibReleaseTestEngine in .arcconfig
+      $librelease_config = null;
+      
+      $engines_config = $this->getConfigurationManager()
+        ->getConfigFromAnySource('unit.engine.multi.engines');
+      
+      if (!empty($engines_config) && is_array($engines_config)) {
+        foreach ($engines_config as $engine_config) {
+          if (isset($engine_config['engine']) && 
+              $engine_config['engine'] === 'LibReleaseTestEngine') {
+            
+            if (isset($engine_config['uber.librelease.paths'])) {
+              $librelease_config = $engine_config['uber.librelease.paths'];
+            }
+            
+            break;
+          }
+        }
+      }
+      
+      if (empty($librelease_config)) {
+        // No librelease paths configured, don't skip blocking
+        return false;
+      }
+
+      // Get changed files from the repository
+      $repository_api = $this->getRepositoryAPI();
+      $changed_paths = $repository_api->getWorkingCopyStatus();
+      
+      if (empty($changed_paths)) {
+        // No changed files, don't skip blocking
+        return false;
+      }
+
+      // Check if any changed file is under a librelease path
+      foreach ($changed_paths as $path => $mask) {
+        // Skip untracked files
+        if ($mask & ArcanistRepositoryAPI::FLAG_UNTRACKED) {
+          continue;
+        }
+
+        // Check if the path matches any librelease path prefix
+        foreach ($librelease_config as $librelease_prefix => $library_name) {
+          if (strpos($path, $librelease_prefix) === 0) {
+            // Found at least one file under a librelease path, skip blocking
+            return true;
+          }
+        }
+      }
+
+      // No files found under librelease paths, don't skip blocking
+      return false;
+    } catch (Exception $ex) {
+      // If anything goes wrong, don't skip blocking (safer to block)
+      return false;
+    }
   }
 
 
