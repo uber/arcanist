@@ -951,28 +951,35 @@ EOBANNER;
 
   /**
    * Check if any changed files in the diff are under librelease paths.
-   * Reads configuration from LibReleaseTestEngine in unit.engine.multi.engines.
+   * Reads uber.librelease.paths from either:
+   *   1. Top-level .arcconfig, or
+   *   2. LibReleaseTestEngine in unit.engine.multi.engines
    * If any file is under a librelease path, we skip the GitHub PR blocking behavior.
    * @return bool True if any changed file is under a librelease path, false otherwise.
    */
   private function areAnyChangedFilesUnderLibreleasePaths() {
     try {
-      // Get librelease paths configuration from LibReleaseTestEngine in .arcconfig
-      $librelease_config = null;
+      // Get librelease paths configuration from .arcconfig
+      // First try top-level config
+      $librelease_config = $this->getConfigurationManager()
+        ->getConfigFromAnySource('uber.librelease.paths');
       
-      $engines_config = $this->getConfigurationManager()
-        ->getConfigFromAnySource('unit.engine.multi.engines');
-      
-      if (!empty($engines_config) && is_array($engines_config)) {
-        foreach ($engines_config as $engine_config) {
-          if (isset($engine_config['engine']) && 
-              $engine_config['engine'] === 'LibReleaseTestEngine') {
-            
-            if (isset($engine_config['uber.librelease.paths'])) {
-              $librelease_config = $engine_config['uber.librelease.paths'];
+      // If not found at top level, try to find it in LibReleaseTestEngine config
+      if (empty($librelease_config)) {
+        $engines_config = $this->getConfigurationManager()
+          ->getConfigFromAnySource('unit.engine.multi.engines');
+        
+        if (!empty($engines_config) && is_array($engines_config)) {
+          foreach ($engines_config as $engine_config) {
+            if (isset($engine_config['engine']) && 
+                $engine_config['engine'] === 'LibReleaseTestEngine') {
+              
+              if (isset($engine_config['uber.librelease.paths'])) {
+                $librelease_config = $engine_config['uber.librelease.paths'];
+              }
+              
+              break;
             }
-            
-            break;
           }
         }
       }
