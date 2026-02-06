@@ -473,6 +473,9 @@ EOTEXT
   public function run() {
     $this->console = PhutilConsole::getConsole();
 
+    // Display informational GitHub banner to all users
+    $this->displayGitHubInformationalBanner();
+
     // UBER CODE
     $this->uberRefProvider = new UberRefProvider(
       $this->getConfigurationManager()->getConfigFromAnySource('uber.arcanist.use_non_tag_refs', false)
@@ -727,6 +730,54 @@ EOTEXT
     $this->removeScratchFile('create-message-jira-issues.json'); // UBER CODE
 
     return 0;
+  }
+
+  /**
+   * Display an informational GitHub migration banner to all users.
+   * This is non-blocking and serves as a notice that we're moving to GitHub.
+   * Only shown to users NOT in the prompt group (prompt group users get the blocking message).
+   */
+  private function displayGitHubInformationalBanner() {
+    // Only show in interactive scenarios
+    if (!$this->isTTY()) {
+      return;
+    }
+
+    // Skip for users in the prompt group - they'll see the blocking message instead
+    $gbu = new UberGitHubBetaUsersPrompt();
+    if ($gbu->isCurrentUserInGitHubBetaUsersPromptGroup()) {
+      return;
+    }
+
+    // Skip if repository is disabled for GitHub prompts
+    if ($this->isRepositoryDisabledForGitHubPrompt()) {
+      return;
+    }
+
+    // Skip if any changed files are under librelease paths
+    if ($this->areAnyChangedFilesUnderLibreleasePaths()) {
+      return;
+    }
+
+    $docs_link = "\033]8;;https://p.uber.com/arh\033\\p.uber.com/arh\033]8;;\033\\";
+    $slack_link = "\033]8;;https://uber.enterprise.slack.com/archives/C05H81RFE4F\033\\#github-pr-beta\033]8;;\033\\";
+
+    $banner = <<<EOBANNER
+**************************************
+*                                    *
+*  Uber is moving to GitHub for      *
+*  enhanced collaboration and        *
+*  workflow!                         *
+*                                    *
+*  Get started at $docs_link     *
+*                                    *
+*  Slack channel: $slack_link    *
+*                                    *
+**************************************
+
+EOBANNER;
+
+    $this->console->writeOut("<fg:green>%s</fg>", $banner);
   }
 
   /**
