@@ -23,6 +23,7 @@ final class ArcanistDiffWorkflow extends ArcanistDiffBasedWorkflow {
   private $hitAutotargets;
   private $uberRefProvider; // UBER CODE
   private $autolandProjectPhid = 'PHID-PROJ-u4i3446wedyolppkckbp'; // UBER CODE
+  private $autoRequestReviewProjectPhid = 'PHID-PROJ-vkcf4mjefnjshq37izot'; // UBER CODE
 
   public function getWorkflowName() {
     return 'diff';
@@ -199,6 +200,9 @@ EOTEXT
       ),
       'noautoland' => array(
         'help' => pht('Do not autoland this change (Skips interactive prompt)'),
+      ),
+      'auto-request-review' => array(
+        'help' => pht('Tag this revision with the AutoRequestReview project on creation and update.'),
       ),
       'nolint' => array(
         'help' => pht('Do not run lint.'),
@@ -711,6 +715,16 @@ EOTEXT
             'objectIdentifier' => $result['revisionid'],
             'transactions' => array(
               array('type' => 'projects.add', 'value' => array($this->autolandProjectPhid)),
+            ),
+        ));
+      }
+
+      if ($this->getArgument('auto-request-review')) {
+        $conduit->callMethodSynchronous('differential.revision.edit',
+          array(
+            'objectIdentifier' => $result['revisionid'],
+            'transactions' => array(
+              array('type' => 'projects.add', 'value' => array($this->autoRequestReviewProjectPhid)),
             ),
         ));
       }
