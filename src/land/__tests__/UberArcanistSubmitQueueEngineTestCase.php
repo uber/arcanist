@@ -154,4 +154,61 @@ final class UberArcanistSubmitQueueEngineTestCase extends PhutilTestCase {
     $this->assertEqual('111', $mock_client->last_call_params['revisionId']);
     $this->assertEqual(1, count($mock_client->last_call_params), 'Should only have one parameter');
   }
+
+  /**
+   * Test that submitMergeRequest does NOT add USSO token.
+   */
+  public function testSubmitMergeRequest_NoUSSOToken() {
+    $client = new SubmitQueueMockClientWithUSSOTracking(
+      'https://submit-queue.example.com',
+      'test-conduit-token'
+    );
+
+    // Call submitMergeRequest (regular merge, no --skip-submitqueue-checks flag)
+    $client->submitMergeRequest(
+      'git@github.com:test/repo.git',
+      '123',
+      '456',
+      false,
+      'master'
+    );
+
+    // Verify that use_usso_token was false
+    $this->assertEqual(false, $client->last_use_usso_token,
+      'Regular merge requests should NOT use USSO token');
+    $this->assertEqual(0, count($client->added_headers),
+      'No Authorization headers should be added for regular merge requests');
+  }
+
+  /**
+   * Test that submitPriorityMergeRequest DOES add USSO token.
+   */
+  public function testSubmitPriorityMergeRequest_WithUSSOToken() {
+    $client = new SubmitQueueMockClientWithUSSOTracking(
+      'https://submit-queue.example.com',
+      'test-conduit-token'
+    );
+
+    // Call submitPriorityMergeRequest (with --skip-submitqueue-checks flag)
+    $client->submitPriorityMergeRequest('789');
+
+    // Verify that use_usso_token was true
+    $this->assertEqual(true, $client->last_use_usso_token,
+      'Priority merge requests should use USSO token');
+    $this->assertEqual(1, count($client->added_headers),
+      'Authorization header should be added for priority merge requests');
+
+    // Verify Authorization header was added with correct format
+    $auth_header_found = false;
+    foreach ($client->added_headers as $header) {
+      if (strpos($header[0], 'Authorization') === 0) {
+        $auth_header_found = true;
+        $this->assertEqual('Authorization', $header[0]);
+        $this->assertTrue(strpos($header[1], 'Bearer ') === 0,
+          'Authorization header should start with "Bearer "');
+      }
+    }
+    $this->assertTrue($auth_header_found,
+      'Authorization header should be present for priority merge requests');
+  }
 }
