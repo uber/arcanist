@@ -2,6 +2,8 @@
 
 final class UberSubmitQueueClient extends Phobject {
 
+    const SUBMITQUEUE_TOKEN_ENV = 'ARC_SUBMITQUEUE_TOKEN';
+
     private $uri;
     private $host;
     private $conduitToken;
@@ -62,6 +64,18 @@ final class UberSubmitQueueClient extends Phobject {
         return $this->callMethod($method, $api, $params)->resolve();
     }
 
+    private function getSubmitQueueToken() {
+        $usso = new UberUSSO();
+        $hostname = parse_url($this->uri, PHP_URL_HOST);
+        $token = $usso->maybeGetToken(
+          $hostname,
+          self::SUBMITQUEUE_TOKEN_ENV);
+        if (!$token) {
+          $token = $usso->getUSSOToken($hostname);
+        }
+        return $token;
+    }
+
     private function callMethod($method, $api, array $params) {
         $req = id(clone $this->uri)->setPath('/api'.$api.'?'.http_build_query($params));
         // Always use the cURL-based HTTPSFuture, for proxy support and other
@@ -69,13 +83,7 @@ final class UberSubmitQueueClient extends Phobject {
         $core_future = new HTTPSFuture($req);
         $core_future->addHeader('Host', $this->getHost());
 
-        // Add uSSO token to the request
-        $usso = new UberUSSO();
-        $hostname = parse_url($this->uri, PHP_URL_HOST);
-        $token = $usso->maybeUseUSSOToken($hostname);
-        if (!$token) {
-          $token = $usso->getUSSOToken($hostname);
-        }
+        $token = $this->getSubmitQueueToken();
         $core_future->addHeader('Authorization', "Bearer {$token}");
 
         $core_future->setMethod($method);
