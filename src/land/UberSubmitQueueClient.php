@@ -2,9 +2,16 @@
 
 final class UberSubmitQueueClient extends Phobject {
 
+    // Environment variable holding a SubmitQueue token. When set, it is sent as
+    // an `Authorization: Bearer` header on the outbound merge call, in the same
+    // way `ARC_USSO_TOKEN` supplies a bearer token in UberUSSO. This is
+    // independent of the `conduitToken` query parameter, which is unchanged.
+    const SUBMITQUEUE_TOKEN_ENV = 'ARC_SUBMITQUEUE_TOKEN';
+
     private $uri;
     private $host;
     private $conduitToken;
+    private $submitQueueToken;
     private $timeout;
 
     public function __construct($uri, $conduitToken, $timeout=10) {
@@ -15,11 +22,20 @@ final class UberSubmitQueueClient extends Phobject {
         }
         $this->host = $this->uri->getDomain();
         $this->conduitToken = $conduitToken;
+        $this->submitQueueToken = (string)getenv(self::SUBMITQUEUE_TOKEN_ENV);
         $this->timeout = $timeout;
     }
 
     public function getHost() {
         return $this->host;
+    }
+
+    public function getConduitToken() {
+        return $this->conduitToken;
+    }
+
+    public function getSubmitQueueToken() {
+        return $this->submitQueueToken;
     }
 
     public function submitMergeRequest($remoteUrl, $diffId, $revisionId, $shouldShadow, $targetOnto) {
@@ -59,6 +75,12 @@ final class UberSubmitQueueClient extends Phobject {
         // protocol edge cases that HTTPFuture does not support.
         $core_future = new HTTPSFuture($req);
         $core_future->addHeader('Host', $this->getHost());
+
+        if (strlen($this->submitQueueToken)) {
+            $core_future->addHeader(
+                'Authorization',
+                'Bearer '.$this->submitQueueToken);
+        }
 
         $core_future->setMethod($method);
         $core_future->setTimeout($this->timeout);
