@@ -4,6 +4,7 @@
 final class UberUSSO extends Phobject {
   // usso itself is somewhat sluggish, takes 1 second to return cached token
   const USSO_CACHE_TIMEOUT = 600;
+  const USSO_TOKEN_ENV = 'ARC_USSO_TOKEN';
 
   public function enhanceConduitClient(
     $conduit,
@@ -13,7 +14,7 @@ final class UberUSSO extends Phobject {
     if ($status != null) {
       // if ARC_USSO_TOKEN is set (service most like) we should not try to use
       // usso/ussh stuff
-      if (!getenv('ARC_USSO_TOKEN')) {
+      if (!getenv(self::USSO_TOKEN_ENV)) {
         if (($status->getStatusCode() == 401) &&
             !empty($status->getExcerpt())) {
           $msg = json_decode($status->getExcerpt(), true);
@@ -24,16 +25,25 @@ final class UberUSSO extends Phobject {
           }
         }
       }
-    } else if (getenv('ARC_USSO_TOKEN')) {
-      $tkn = getenv('ARC_USSO_TOKEN');
     } else {
-      $tkn = self::maybeUseUSSOToken($conduit->getHost());
+      $tkn = $this->maybeGetToken(
+        $conduit->getHost(),
+        self::USSO_TOKEN_ENV);
     }
     if ($tkn !== null) {
       $conduit->setHeader('Authorization', 'Bearer '.$tkn);
       return true;
     }
     return false;
+  }
+
+  public function maybeGetToken($domain, $token_environment_variable) {
+    $token = getenv($token_environment_variable);
+    if ($token) {
+      return $token;
+    }
+
+    return $this->maybeUseUSSOToken($domain);
   }
 
   public function maybeUseUSSOToken($domain) {
